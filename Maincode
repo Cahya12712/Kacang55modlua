@@ -2,7 +2,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "kacang55 Premium Mod",
-   LoadingTitle = "Final Debugging kacang55...",
+   LoadingTitle = "Mengintegrasikan kacang55 Teleport...",
    ConfigurationSaving = { Enabled = true, FolderName = "kacang55_Configs", FileName = "MainConfig" },
    Discord = { Enabled = false },
    KeySystem = false,
@@ -12,15 +12,14 @@ local Window = Rayfield:CreateWindow({
 local States = {
     Head = 0, Torso = 0, Arms = 0, Legs = 0,
     WalkSpeed = 16, JumpPower = 50,
-    AutoApply = true, Noclip = false, ESP = false
+    AutoApply = true, Noclip = false, ESP = false,
+    TouchTP = false -- State baru untuk Teleport
 }
 
 -- [ FUNGSI KEPALA & RAMBUT - FORCE SCAN ]
 local function applyBodyMod(char)
     if not char then return end
     task.wait(0.5)
-
-    -- 1. Sisir Body Parts
     for _, v in pairs(char:GetChildren()) do
         if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
             if v.Name == "Head" then
@@ -31,60 +30,69 @@ local function applyBodyMod(char)
             elseif v.Name:find("Leg") or v.Name:find("Foot") then v.Transparency = States.Legs end
         end
     end
-
-    -- 2. Sisir Aksesori & Rambut (Force Check)
     for _, acc in pairs(char:GetChildren()) do
-        if acc:IsA("Accessory") then
-            local handle = acc:FindFirstChild("Handle")
-            if handle then
-                local isHead = false
-                -- Scan mendalam Attachment
-                for _, att in pairs(handle:GetChildren()) do
-                    if att:IsA("Attachment") then
-                        local n = att.Name:lower()
-                        if n:find("hair") or n:find("hat") or n:find("face") or n:find("head") or n:find("neck") then
-                            isHead = true
-                            break
-                        end
+        if acc:IsA("Accessory") and acc:FindFirstChild("Handle") then
+            local handle = acc.Handle
+            local isHead = false
+            for _, att in pairs(handle:GetChildren()) do
+                if att:IsA("Attachment") then
+                    local n = att.Name:lower()
+                    if n:find("hair") or n:find("hat") or n:find("face") or n:find("head") or n:find("neck") then
+                        isHead = true
+                        break
                     end
                 end
-                
-                -- Jika tertangkap sebagai aset kepala, paksa transparan sesuai slider Kepala
-                if isHead or acc.Name:lower():find("hair") or acc.Name:lower():find("hat") then
-                    handle.Transparency = States.Head
-                else
-                    handle.Transparency = States.Torso
-                end
+            end
+            if isHead or acc.Name:lower():find("hair") or acc.Name:lower():find("hat") then
+                handle.Transparency = States.Head
+            else
+                handle.Transparency = States.Torso
             end
         end
     end
 end
 
--- [ FUNGSI PEMBERSIH EMOTE (AGRESSIVE KILL) ]
+-- [ FUNGSI PEMBERSIH EMOTE ]
 local function KillEmoteGui()
     local CAS = game:GetService("ContextActionService")
     local CG = game:GetService("CoreGui")
     local PG = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
-    
-    -- 1. Hapus GUI dari CoreGui & PlayerGui
     local targets = {"Emotes", "EmoteGUI", "Emote Menu"}
     for _, name in pairs(targets) do
         if CG:FindFirstChild(name) then CG[name]:Destroy() end
         if PG and PG:FindFirstChild(name) then PG[name]:Destroy() end
     end
-    
-    -- 2. Matikan Tombol Mobile (ContextActionService)
-    pcall(function()
-        CAS:UnbindCoreAction("Emote Menu") -- Nama action di script Gi#7331
-    end)
-    
-    -- 3. Cari tombol "Open/Close" liar
+    pcall(function() CAS:UnbindCoreAction("Emote Menu") end)
     for _, v in pairs(CG:GetDescendants()) do
         if v:IsA("TextButton") and (v.Text == "Open" or v.Text == "Close") and v.Name == "Open" then
             v.Parent:Destroy()
         end
     end
 end
+
+-- [ LOGIC TOUCH TELEPORT ]
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed or not States.TouchTP then return end
+    
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local ray = Camera:ScreenPointToRay(input.Position.X, input.Position.Y)
+            local raycastParams = RaycastParams.new()
+            raycastParams.FilterDescendantsInstances = {char}
+            raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+            
+            local result = workspace:Raycast(ray.Origin, ray.Direction * 1000, raycastParams)
+            if result then
+                char.HumanoidRootPart.CFrame = CFrame.new(result.Position + Vector3.new(0, 3, 0))
+                Rayfield:Notify({Title = "Teleport", Content = "Berhasil teleport ke lokasi!", Duration = 2})
+            end
+        end
+    end
+end)
 
 -- [ LOGIC LOOP ]
 local RunService = game:GetService("RunService")
@@ -112,14 +120,24 @@ RunService.Stepped:Connect(function()
 end)
 
 -- [ TABS ]
-local MainTab = Window:CreateTab("Player")
+local MainTab = Window:CreateTab("Movement")
 local VisualTab = Window:CreateTab("Visual")
 local EmoteTab = Window:CreateTab("Emotes")
 
-MainTab:CreateSection("Movement")
+MainTab:CreateSection("Movement Settings")
 MainTab:CreateSlider({ Name = "WalkSpeed", Range = {16, 300}, Increment = 1, CurrentValue = 16, Callback = function(v) States.WalkSpeed = v; pcall(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end) end })
 MainTab:CreateSlider({ Name = "JumpPower", Range = {50, 600}, Increment = 1, CurrentValue = 50, Callback = function(v) States.JumpPower = v; pcall(function() game.Players.LocalPlayer.Character.Humanoid.UseJumpPower = true; game.Players.LocalPlayer.Character.Humanoid.JumpPower = v end) end })
+
+MainTab:CreateSection("Special Abilities")
 MainTab:CreateToggle({ Name = "Noclip", CurrentValue = false, Callback = function(v) States.Noclip = v end })
+MainTab:CreateToggle({ 
+    Name = "Touch Teleport (Klik Layar)", 
+    CurrentValue = false, 
+    Callback = function(v) 
+        States.TouchTP = v 
+        Rayfield:Notify({Title = "Touch TP", Content = v and "Aktif! Klik/Sentuh untuk teleport." or "Nonaktif."})
+    end 
+})
 
 VisualTab:CreateSection("ESP & Invisible")
 VisualTab:CreateToggle({ Name = "ESP Players", CurrentValue = false, Callback = function(v) States.ESP = v end })
@@ -135,7 +153,7 @@ EmoteTab:CreateToggle({
    Callback = function(Value)
       if Value then
           loadstring(game:HttpGetAsync("https://gist.githubusercontent.com/RedZenXYZ/3da6af1961efa275de6c3c2a6dbace03/raw/bb027f99cec0ea48ef9c5eabfb9116ddff20633d/FE%2520Emotes%2520Gui"))()
-          Rayfield:Notify({Title = "Emote Mod", Content = "Emote GUI Muncul!"})
+          Rayfield:Notify({Title = "Emote Mod", Content = "Emote GUI Dimuat!"})
       else
           KillEmoteGui()
           Rayfield:Notify({Title = "Emote Mod", Content = "Emote GUI Dihancurkan!"})
@@ -151,4 +169,4 @@ game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
     end
 end)
 
-Rayfield:Notify({Title = "kacang55 Ultimate", Content = "Mod Ready!"})
+Rayfield:Notify({Title = "kacang55 Ultimate", Content = "Teleportasi & Mod Ready!"})
