@@ -1,0 +1,178 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "kacang55 Premium Mod",
+   LoadingTitle = "Mengoptimasi Engine kacang55...",
+   ConfigurationSaving = { Enabled = true, FolderName = "kacang55_Configs", FileName = "MainConfig" },
+   Discord = { Enabled = false },
+   KeySystem = false,
+})
+
+-- Variabel State
+local States = {
+    Head = 0, Torso = 0, Arms = 0, Legs = 0,
+    WalkSpeed = 16, JumpPower = 50,
+    AutoApply = true, Noclip = false
+}
+
+-- Fungsi Pencari Rambut & Aksesori Kepala (Metode Scan Mendalam)
+local function applyBodyMod(char)
+    if not char then return end
+    task.wait(0.5) -- Jeda agar rambut ter-render sempurna
+
+    -- 1. Part Tubuh Utama (Daging)
+    for _, v in pairs(char:GetChildren()) do
+        if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
+            if v.Name == "Head" then
+                v.Transparency = States.Head
+                if v:FindFirstChildOfClass("Decal") then v:FindFirstChildOfClass("Decal").Transparency = States.Head end
+            elseif v.Name:find("Torso") then
+                v.Transparency = States.Torso
+            elseif v.Name:find("Arm") or v.Name:find("Hand") then
+                v.Transparency = States.Arms
+            elseif v.Name:find("Leg") or v.Name:find("Foot") then
+                v.Transparency = States.Legs
+            end
+        end
+    end
+
+    -- 2. Scan Aksesori Khusus (Rambut/Topi)
+    for _, acc in pairs(char:GetChildren()) do
+        if acc:IsA("Accessory") then
+            local handle = acc:FindFirstChild("Handle")
+            if handle then
+                local isHeadItem = false
+                for _, attach in pairs(handle:GetChildren()) do
+                    if attach:IsA("Attachment") then
+                        local n = attach.Name:lower()
+                        if n:find("hair") or n:find("hat") or n:find("face") or n:find("head") or n:find("neck") then
+                            isHeadItem = true
+                        end
+                    end
+                end
+                
+                if isHeadItem then
+                    handle.Transparency = States.Head
+                else
+                    handle.Transparency = States.Torso
+                end
+            end
+        end
+    end
+end
+
+-- Logic Noclip
+local RunService = game:GetService("RunService")
+RunService.Stepped:Connect(function()
+    if States.Noclip then
+        local char = game.Players.LocalPlayer.Character
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then v.CanCollide = false end
+            end
+        end
+    end
+end)
+
+-- TABS
+local MainTab = Window:CreateTab("Player")
+local VisualTab = Window:CreateTab("Invis")
+
+-- [ PLAYER SETTINGS ]
+MainTab:CreateSection("Movement & Ability")
+
+MainTab:CreateSlider({
+   Name = "WalkSpeed (Kecepatan)",
+   Range = {16, 300},
+   Increment = 1,
+   CurrentValue = 16,
+   Callback = function(v) 
+       States.WalkSpeed = v
+       pcall(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end) 
+   end,
+})
+
+MainTab:CreateSlider({
+   Name = "JumpPower (Loncatan)",
+   Range = {50, 600},
+   Increment = 1,
+   CurrentValue = 50,
+   Callback = function(v) 
+       States.JumpPower = v
+       pcall(function() 
+           local hum = game.Players.LocalPlayer.Character.Humanoid
+           hum.UseJumpPower = true
+           hum.JumpPower = v 
+       end) 
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Noclip (Tembus Dinding)",
+   CurrentValue = false,
+   Callback = function(v) States.Noclip = v end,
+})
+
+-- [ INVIS SETTINGS ]
+VisualTab:CreateSection("Custom Transparency Control")
+
+VisualTab:CreateSlider({
+   Name = "Kepala & Aksesori Rambut",
+   Range = {0, 1},
+   Increment = 0.1,
+   CurrentValue = 0,
+   Callback = function(v)
+      States.Head = v
+      applyBodyMod(game.Players.LocalPlayer.Character)
+   end,
+})
+
+VisualTab:CreateSlider({
+   Name = "Badan (Torso)",
+   Range = {0, 1},
+   Increment = 0.1,
+   CurrentValue = 0,
+   Callback = function(v)
+      States.Torso = v
+      applyBodyMod(game.Players.LocalPlayer.Character)
+   end,
+})
+
+VisualTab:CreateSlider({
+   Name = "Tangan",
+   Range = {0, 1},
+   Increment = 0.1,
+   CurrentValue = 0,
+   Callback = function(v) States.Arms = v; applyBodyMod(game.Players.LocalPlayer.Character) end,
+})
+
+VisualTab:CreateSlider({
+   Name = "Kaki",
+   Range = {0, 1},
+   Increment = 0.1,
+   CurrentValue = 0,
+   Callback = function(v) States.Legs = v; applyBodyMod(game.Players.LocalPlayer.Character) end,
+})
+
+VisualTab:CreateSection("Settings")
+VisualTab:CreateToggle({
+   Name = "Auto Apply on Respawn",
+   CurrentValue = true,
+   Callback = function(v) States.AutoApply = v end,
+})
+
+-- Respawn Handler
+game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
+    if States.AutoApply then
+        local hum = char:WaitForChild("Humanoid", 10)
+        task.wait(1) -- Beri waktu agar aksesoris ter-load
+        applyBodyMod(char)
+        if hum then
+            hum.WalkSpeed = States.WalkSpeed
+            hum.UseJumpPower = true
+            hum.JumpPower = States.JumpPower
+        end
+    end
+end)
+
+Rayfield:Notify({Title = "kacang55 Loaded", Content = "Script Full (Speed, Jump, Noclip, Invis) Aktif!"})
