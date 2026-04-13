@@ -170,4 +170,3 @@ game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 Rayfield:Notify({Title = "kacang55 Ultimate", Content = "Teleportasi & Mod Ready!"})
-y
