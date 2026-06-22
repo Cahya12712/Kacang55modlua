@@ -271,7 +271,7 @@ EmoteTab:CreateToggle({
    CurrentValue = false,
    Callback = function(Value)
       if Value then
-          loadstring(game:HttpGetAsync("https://gist.githubusercontent.com/RedZenXYZ/3da6af1961efa275de6c3c2a6dbace03/raw/bb027f99cec0ea48ef9c5eabfb9116ddff20633d/FE%2520Emotes%2520Gui"))()
+          loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Cahya12712/Kacang55modlua/refs/heads/main/emote.lua"))()
           Rayfield:Notify({Title = "Emote Mod", Content = "Emote GUI Dimuat!"})
       else
           KillEmoteGui()
