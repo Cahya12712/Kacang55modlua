@@ -1,106 +1,14 @@
--- =================================================================
--- KACANG55 ULTIMATE MOD MENU - ORIGINAL RAYFIELD WITH ANIMATED BACKLIGHT
--- Custom Colors: #f0a12b (Orange) & #FACCCE (Pink Pastel)
--- =================================================================
-
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "kacang55 Premium Mod",
    LoadingTitle = "Mengintegrasikan kacang55 Ultimate...",
-   LoadingSubtitle = "by kacang55",
    ConfigurationSaving = { Enabled = true, FolderName = "kacang55_Configs", FileName = "MainConfig" },
    Discord = { Enabled = false },
    KeySystem = false,
 })
 
--- =================================================================
--- REVISI SYSTEM BACKLIGHT: AUTOMATIC PARENT DETECTOR
--- Custom Colors: Orange (#f0a12b) & Pink Pastel (#FACCCE)
--- =================================================================
-task.spawn(function()
-    local CoreGui = game:GetService("CoreGui")
-    local RunService = game:GetService("RunService")
-    
-    -- Tunggu hingga folder ScreenGui Rayfield terbuat
-    local RayfieldGui = CoreGui:WaitForChild("Rayfield", 15)
-    if not RayfieldGui then 
-        warn("Rayfield Gui tidak ditemukan di CoreGui!")
-        return 
-    end
-    
-    -- Mencari Frame Utama berdasarkan karakteristik ukuran khas Rayfield
-    local MainFrame = nil
-    for _, child in pairs(RayfieldGui:GetChildren()) do
-        if child:IsA("Frame") and child.AbsoluteSize.X > 100 then
-            MainFrame = child
-            break
-        end
-    end
-    
-    -- Jika pencarian pertama gagal, coba tunggu objek "Main" secara manual
-    if not MainFrame then
-        MainFrame = RayfieldGui:WaitForChild("Main", 5)
-    end
-    
-    if not MainFrame then 
-        warn("Main Frame Rayfield gagal dideteksi secara otomatis!")
-        return 
-    end
-
-    -- Memastikan properti dasar agar objek di belakangnya bisa terlihat jika ada outline clip
-    MainFrame.ClipsDescendants = false
-
-    -- Membuat Canvas Backlight
-    local BacklightContainer = Instance.new("Frame")
-    BacklightContainer.Name = "kacang55_Backlight"
-    BacklightContainer.Size = UDim2.new(1, 100, 1, 100)
-    BacklightContainer.Position = UDim2.new(0, -50, 0, -50)
-    BacklightContainer.BackgroundTransparency = 1
-    BacklightContainer.ZIndex = -10 -- Memaksa berada di posisi paling belakang dari seluruh elemen internal
-    BacklightContainer.Parent = MainFrame
-    
-    -- Gradasi Glow 1 (Orange)
-    local GlowOrange = Instance.new("ImageLabel")
-    GlowOrange.Size = UDim2.new(1, 0, 1, 0)
-    GlowOrange.BackgroundTransparency = 1
-    GlowOrange.Image = "rbxassetid://6015014023" -- ID tekstur neon glow universal roblox
-    GlowOrange.ImageColor3 = Color3.fromHex("#f0a12b")
-    GlowOrange.ImageTransparency = 0.35
-    GlowOrange.ZIndex = -12
-    GlowOrange.Parent = BacklightContainer
-    
-    -- Gradasi Glow 2 (Pink Pastel)
-    local GlowPink = Instance.new("ImageLabel")
-    GlowPink.Size = UDim2.new(1, -10, 1, -10)
-    GlowPink.Position = UDim2.new(0, 5, 0, 5)
-    GlowPink.BackgroundTransparency = 1
-    GlowPink.Image = "rbxassetid://6015014023"
-    GlowPink.ImageColor3 = Color3.fromHex("#FACCCE")
-    GlowPink.ImageTransparency = 0.45
-    GlowPink.ZIndex = -11
-    GlowPink.Parent = BacklightContainer
-
-    -- Loop Animasi Gelombang Berputar & Bernapas (RenderStepped)
-    local angle = 0
-    RunService.RenderStepped:Connect(function(dt)
-        if not MainFrame or not MainFrame.Parent then return end
-        angle = angle + dt * 1.8 -- Kontrol kecepatan rotasi aura
-        
-        local pulse = math.sin(angle) * 20
-        local dynamicAlpha = 0.35 + (math.sin(angle * 2) * 0.08)
-        
-        BacklightContainer.Size = UDim2.new(1, 100 + pulse, 1, 100 + pulse)
-        BacklightContainer.Position = UDim2.new(0, -(50 + pulse/2), 0, -(50 + pulse/2))
-        GlowOrange.ImageTransparency = dynamicAlpha
-        GlowPink.Rotation = angle * 12 -- Rotasi halus bauran warna pink pastel
-    end)
-end)
--- =================================================================
-
--- =================================================================
--- VARIABEL STATE & LOGIC UTAMAMU (LENGKAP TANPA DIURANGI)
--- =================================================================
+-- Variabel State
 local States = {
     Head = 0, Torso = 0, Arms = 0, Legs = 0,
     WalkSpeed = 16, JumpPower = 50,
@@ -108,12 +16,17 @@ local States = {
     TouchTP = false,
     Fly = false, FlySpeed = 50,
     SpamSlide = false,
-    IsFreezing = false
+    IsFreezing = false,
+    -- State Baru untuk Headless & Korblox
+    Headless = false,
+    Korblox = false
 }
 
+-- Mengambil Event untuk Spam Slide
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
+-- Menggunakan pcall agar skrip tidak macet total jika event tidak ditemukan di game lain
 local useKeybind
 task.spawn(function()
     pcall(function()
@@ -124,6 +37,44 @@ task.spawn(function()
     end)
 end)
 
+-- [ LOGIC LOOP UNTUK HEADLESS & KORBLOX ]
+task.spawn(function()
+    while true do
+        local char = player.Character
+        if char then
+            -- Handler Headless
+            if States.Headless then
+                pcall(function()
+                    if char:FindFirstChild("Head") then
+                        char.Head.Transparency = 1
+                        for _, v in pairs(char.Head:GetChildren()) do
+                            if v:IsA("Decal") then
+                                v.Transparency = 1
+                            end
+                        end
+                    end
+                end)
+            end
+            
+            -- Handler Korblox Right Leg
+            if States.Korblox then
+                pcall(function()
+                    if char:FindFirstChild("RightLowerLeg") and char:FindFirstChild("RightUpperLeg") and char:FindFirstChild("RightFoot") then
+                        char.RightLowerLeg.MeshId = "902942093"
+                        char.RightLowerLeg.Transparency = 1
+                        char.RightUpperLeg.MeshId = "http://www.roblox.com/asset/?id=902942096"
+                        char.RightUpperLeg.TextureID = "http://roblox.com/asset/?id=902843398"
+                        char.RightFoot.MeshId = "902942089"
+                        char.RightFoot.Transparency = 1
+                    end
+                end)
+            end
+        end
+        task.wait(1) -- Interval pengecekan (bawaan skrip asal)
+    end
+end)
+
+-- [ FUNGSI KEPALA & RAMBUT - FORCE SCAN ]
 local function applyBodyMod(char)
     if not char then return end
     task.wait(0.5)
@@ -159,6 +110,7 @@ local function applyBodyMod(char)
     end
 end
 
+-- [ FUNGSI PEMBERSIH EMOTE ]
 local function KillEmoteGui()
     local CAS = game:GetService("ContextActionService")
     local CG = game:GetService("CoreGui")
@@ -176,6 +128,7 @@ local function KillEmoteGui()
     end
 end
 
+-- [ FUNGSI FLY SYSTEM (LinearVelocity) ]
 local FlyGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 FlyGui.Name = "kacang55_FlyUI"
 FlyGui.Enabled = false
@@ -238,6 +191,7 @@ local function startFly()
     end)
 end
 
+-- [ LOGIC TOUCH TELEPORT ]
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 
@@ -261,6 +215,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
+-- [ LOGIC LOOP ]
 local RunService = game:GetService("RunService")
 RunService.Stepped:Connect(function()
     if States.Noclip then
@@ -277,8 +232,7 @@ RunService.Stepped:Connect(function()
                 local highlight = p.Character:FindFirstChild("kacang55_ESP") or Instance.new("Highlight")
                 highlight.Name = "kacang55_ESP"
                 highlight.Parent = p.Character
-                highlight.FillColor = Color3.fromHex("#f0a12b") -- Menggunakan palet utama untuk ESP
-                highlight.OutlineColor = Color3.fromHex("#FACCCE")
+                highlight.FillColor = Color3.fromRGB(255, 0, 0)
                 highlight.Enabled = true
                 highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
             end
@@ -286,9 +240,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- =================================================================
--- DEKLARASI PENUH HALAMAN TABS (RAYFIELD ENGINE ORIGINAL)
--- =================================================================
+-- [ TABS ]
 local MainTab = Window:CreateTab("Movement")
 local VisualTab = Window:CreateTab("Visual")
 local EmoteTab = Window:CreateTab("Emotes")
@@ -347,6 +299,40 @@ VisualTab:CreateToggle({
         end
     end 
 })
+
+-- INTEGRASI TOGGLE BARU: HEADLESS & KORBLOX
+VisualTab:CreateToggle({
+    Name = "Client Headless",
+    CurrentValue = false,
+    Callback = function(v)
+        States.Headless = v
+        if not v then
+            -- Mengembalikan transparansi kepala ke normal saat toggle dimatikan
+            pcall(function()
+                local head = player.Character:FindFirstChild("Head")
+                if head then
+                    head.Transparency = 0
+                    for _, child in pairs(head:GetChildren()) do
+                        if child:IsA("Decal") then child.Transparency = 0 end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+VisualTab:CreateToggle({
+    Name = "Client Korblox Right Leg",
+    CurrentValue = false,
+    Callback = function(v)
+        States.Korblox = v
+        if not v then
+            -- Memaksa karakter memuat ulang bentuk aslinya saat dimatikan (paling aman lewat refresh/respawn internal game atau ganti manual jika didukung)
+            Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox dinonaktifkan. Efek normal kembali setelah Respawn!", Duration = 3})
+        end
+    end
+})
+
 VisualTab:CreateSlider({ Name = "Kepala & Rambut", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Head = v; applyBodyMod(game.Players.LocalPlayer.Character) end })
 VisualTab:CreateSlider({ Name = "Badan", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Torso = v; applyBodyMod(game.Players.LocalPlayer.Character) end })
 VisualTab:CreateSlider({ Name = "Tangan", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Arms = v; applyBodyMod(game.Players.LocalPlayer.Character) end })
@@ -367,6 +353,7 @@ EmoteTab:CreateToggle({
    end,
 })
 
+-- [ INTEGRASI TAB EXPLOITS BARU ]
 ExploitTab:CreateSection("Macro & Automation")
 ExploitTab:CreateToggle({
     Name = "Spam Slide",
@@ -418,6 +405,7 @@ ExploitTab:CreateButton({
     end,
 })
 
+-- [ CHARACTER RE-APPLY ]
 game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
     if States.AutoApply then
         task.wait(1)
@@ -426,4 +414,5 @@ game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
     end
 end)
 
-Rayfield:Notify({Title = "kacang55 Ultimate", Content = "Aura Chroma Backlight Diaktifkan! ✅"})
+Rayfield:Notify({Title = "kacang55 Ultimate", Content = "Noclip, ESP & Spam Slide Integrated!"})
+print("Spam Slide & Freeze successfully integrated into Rayfield! ✅")
