@@ -1,6 +1,6 @@
 -- =================================================================
--- RAYFIELD INTERFACE SUITE (MODIFIED & DE-TRACKED)
--- Custom Color Palette: #f0a12b & #FACCCE
+-- UNIFIED RAYFIELD INTERFACE SUITE (FULLY DE-TRACKED & STABLE)
+-- Custom Color Palette: #f0a12b (Orange) & #FACCCE (Pink Pastel)
 -- =================================================================
 
 local function getService(name)
@@ -15,52 +15,6 @@ local CoreGui = getService("CoreGui")
 local HttpService = getService('HttpService')
 local RunService = getService('RunService')
 
-local useStudio = RunService:IsStudio() or false
-local settingsCreated = false
-local settingsInitialized = false
-local requestFunc = (syn and syn.request) or (fluxus and fluxus.request) or (http and http.request) or http_request or request
-
-local RayfieldFolder = "Rayfield"
-local ConfigurationFolder = RayfieldFolder.."/Configurations"
-local ConfigurationExtension = ".rfld"
-
-local settingsTable = {
-	General = {
-		rayfieldOpen = {Type = 'bind', Value = 'K', Name = 'Rayfield Keybind'},
-	},
-	System = {
-		usageAnalytics = {Type = 'toggle', Value = false, Name = 'Anonymised Analytics'},
-	}
-}
-
-local overriddenSettings = {}
-local function overrideSetting(category: string, name: string, value: any)
-	overriddenSettings[category .. "." .. name] = value
-end
-
-local function getSetting(category: string, name: string): any
-	if overriddenSettings[category .. "." .. name] ~= nil then
-		return overriddenSettings[category .. "." .. name]
-	elseif settingsTable[category][name] ~= nil then
-		return settingsTable[category][name].Value
-	end
-end
-
-overrideSetting("System", "usageAnalytics", false)
-
-local function callSafely(func, ...)
-	if func then
-		local success, result = pcall(func, ...)
-		if not success then return false else return result end
-	end
-end
-
-local function ensureFolder(folderPath)
-	if isfolder and not callSafely(isfolder, folderPath) then
-		callSafely(makefolder, folderPath)
-	end
-end
-
 local RayfieldLibrary = {
 	Flags = {},
 	Theme = {
@@ -70,20 +24,20 @@ local RayfieldLibrary = {
 			Topbar = Color3.fromRGB(34, 34, 34),
 			Shadow = Color3.fromRGB(20, 20, 20),
 
-			NotificationBackground = Color3.fromRGB(20, 20, 20),
+			NotificationBackground = Color3.fromRGB(25, 25, 25),
 			NotificationActionsBackground = Color3.fromRGB(240, 161, 43), -- #f0a12b
 
-			TabBackground = Color3.fromRGB(45, 45, 45),
-			TabStroke = Color3.fromRGB(60, 60, 60),
+			TabBackground = Color3.fromRGB(35, 35, 35),
+			TabStroke = Color3.fromRGB(50, 50, 50),
 			TabBackgroundSelected = Color3.fromRGB(240, 161, 43), -- #f0a12b
 			TabTextColor = Color3.fromRGB(250, 204, 206), -- #FACCCE
 			SelectedTabTextColor = Color3.fromRGB(25, 25, 25),
 
-			ElementBackground = Color3.fromRGB(35, 35, 35),
-			ElementBackgroundHover = Color3.fromRGB(45, 45, 45),
+			ElementBackground = Color3.fromRGB(32, 32, 32),
+			ElementBackgroundHover = Color3.fromRGB(40, 40, 40),
 			SecondaryElementBackground = Color3.fromRGB(25, 25, 25),
-			ElementStroke = Color3.fromRGB(55, 55, 55),
-			SecondaryElementStroke = Color3.fromRGB(45, 45, 45),
+			ElementStroke = Color3.fromRGB(45, 45, 45),
+			SecondaryElementStroke = Color3.fromRGB(40, 40, 40),
 
 			SliderBackground = Color3.fromRGB(240, 161, 43), -- #f0a12b
 			SliderProgress = Color3.fromRGB(240, 161, 43), -- #f0a12b
@@ -94,8 +48,8 @@ local RayfieldLibrary = {
 			ToggleDisabled = Color3.fromRGB(100, 100, 100),
 			ToggleEnabledStroke = Color3.fromRGB(250, 204, 206), -- #FACCCE
 			ToggleDisabledStroke = Color3.fromRGB(125, 125, 125),
-			ToggleEnabledOuterStroke = Color3.fromRGB(100, 100, 100),
-			ToggleDisabledOuterStroke = Color3.fromRGB(65, 65, 65),
+			ToggleEnabledOuterStroke = Color3.fromRGB(80, 80, 80),
+			ToggleDisabledOuterStroke = Color3.fromRGB(55, 55, 55),
 
 			DropdownSelected = Color3.fromRGB(240, 161, 43), -- #f0a12b
 			DropdownUnselected = Color3.fromRGB(30, 30, 30),
@@ -107,395 +61,362 @@ local RayfieldLibrary = {
 	}
 }
 
--- [ MEMBUAT FUNGSI BAWAN KUSTOM RAYFIELD SECARA INSTAN ]
-local Rayfield = {}
-function Rayfield:CreateWindow(Settings)
-    -- Fallback/Mock Generator agar GUI Terbuka Sempurna dengan Pilihan Warna Dominan Kustom
-    local UI = Instance.new("ScreenGui")
-    UI.Name = "kacang55_RayfieldRoot"
-    
-    -- Menghindari Crash atau Duplikasi GUI Lama
-    if CoreGui:FindFirstChild(UI.Name) then CoreGui[UI.Name]:Destroy() end
-    pcall(function() UI.Parent = (gethiddenui or gethui or function() return CoreGui end)() end)
-    
-    local MainFrame = Instance.new("Frame", UI)
-    MainFrame.Size = UDim2.new(0, 520, 0, 340)
-    MainFrame.Position = UDim2.new(0.5, -260, 0.5, -170)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Active = true
-    MainFrame.Draggable = true
-    
-    local MainCorner = Instance.new("UICorner", MainFrame)
-    MainCorner.CornerRadius = UDim.new(0, 9)
-    
-    local Topbar = Instance.new("Frame", MainFrame)
-    Topbar.Size = UDim2.new(1, 0, 0, 45)
-    Topbar.BackgroundColor3 = Color3.fromRGB(34, 34, 34)
-    Topbar.BorderSizePixel = 0
-    
-    local TopbarCorner = Instance.new("UICorner", Topbar)
-    TopbarCorner.CornerRadius = UDim.new(0, 9)
-    
-    local Title = Instance.new("TextLabel", Topbar)
-    Title.Size = UDim2.new(1, -100, 1, 0)
-    Title.Position = UDim2.new(0, 15, 0, 0)
-    Title.Text = Settings.Name or "Mod Menu"
-    Title.TextColor3 = Color3.fromHex("#FACCCE")
-    Title.TextSize = 18
-    Title.Font = Enum.Font.SourceSansBold
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local CloseBtn = Instance.new("TextButton", Topbar)
-    CloseBtn.Size = UDim2.new(0, 35, 0, 35)
-    CloseBtn.Position = UDim2.new(1, -45, 0, 5)
-    CloseBtn.Text = "X"
-    CloseBtn.TextColor3 = Color3.fromHex("#f0a12b")
-    CloseBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    CloseBtn.TextSize = 16
-    Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1, 0)
-    CloseBtn.MouseButton1Click:Connect(function() UI:Destroy() end)
-    
-    local TabBar = Instance.new("ScrollingFrame", MainFrame)
-    TabBar.Size = UDim2.new(0, 130, 1, -55)
-    TabBar.Position = UDim2.new(0, 10, 0, 50)
-    TabBar.BackgroundTransparency = 1
-    TabBar.CanvasSize = UDim2.new(0, 0, 2, 0)
-    TabBar.ScrollBarThickness = 2
-    
-    local TabListLayout = Instance.new("UIListLayout", TabBar)
-    TabListLayout.Padding = UDim.new(0, 5)
-    
-    local ContainerHolder = Instance.new("Frame", MainFrame)
-    ContainerHolder.Size = UDim2.new(1, -160, 1, -55)
-    ContainerHolder.Position = UDim2.new(0, 150, 0, 50)
-    ContainerHolder.BackgroundTransparency = 1
-    
-    local PageLayout = Instance.new("UIPageLayout", ContainerHolder)
-    PageLayout.TweenTime = 0.25
-    PageLayout.ScrollWheelInputEnabled = false
-    
-    local WindowObj = {}
-    local isFirstTab = true
-    
-    function WindowObj:CreateTab(TabName)
-        local TabButton = Instance.new("TextButton", TabBar)
-        TabButton.Size = UDim2.new(1, -5, 0, 35)
-        TabButton.BackgroundColor3 = isFirstTab and Color3.fromHex("#f0a12b") or Color3.fromRGB(40, 40, 40)
-        TabButton.Text = TabName
-        TabButton.TextColor3 = isFirstTab and Color3.fromRGB(20, 20, 20) or Color3.fromHex("#FACCCE")
-        TabButton.Font = Enum.Font.SourceSansBold
-        TabButton.TextSize = 14
-        Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 6)
-        
-        local Page = Instance.new("ScrollingFrame", ContainerHolder)
-        Page.Name = TabName
-        Page.Size = UDim2.new(1, 0, 1, 0)
-        Page.BackgroundTransparency = 1
-        Page.CanvasSize = UDim2.new(0, 0, 3, 0)
-        Page.ScrollBarThickness = 4
-        
-        local PageList = Instance.new("UIListLayout", Page)
-        PageList.Padding = UDim.new(0, 8)
-        
-        TabButton.MouseButton1Click:Connect(function()
-            for _, btn in pairs(TabBar:GetChildren()) do
-                if btn:IsA("TextButton") then
-                    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                    btn.TextColor3 = Color3.fromHex("#FACCCE")
-                end
-            end
-            TabButton.BackgroundColor3 = Color3.fromHex("#f0a12b")
-            TabButton.TextColor3 = Color3.fromRGB(20, 20, 20)
-            PageLayout:JumpTo(Page)
-        end)
-        
-        isFirstTab = false
-        local TabObj = {}
-        
-        function TabObj:CreateSection(SecName)
-            local SecFrame = Instance.new("Frame", Page)
-            SecFrame.Size = UDim2.new(1, -10, 0, 25)
-            SecFrame.BackgroundTransparency = 1
-            
-            local SecLabel = Instance.new("TextLabel", SecFrame)
-            SecLabel.Size = UDim2.new(1, 0, 1, 0)
-            SecLabel.Text = "— " .. SecName .. " —"
-            SecLabel.TextColor3 = Color3.fromHex("#f0a12b")
-            SecLabel.Font = Enum.Font.SourceSansBold
-            SecLabel.TextSize = 14
-            SecLabel.BackgroundTransparency = 1
-        end
-        
-        function TabObj:CreateToggle(Options)
-            local TglFrame = Instance.new("Frame", Page)
-            TglFrame.Size = UDim2.new(1, -10, 0, 40)
-            TglFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-            Instance.new("UICorner", TglFrame).CornerRadius = UDim.new(0, 6)
-            
-            local Label = Instance.new("TextLabel", TglFrame)
-            Label.Size = UDim2.new(0.7, 0, 1, 0)
-            Label.Position = UDim2.new(0, 10, 0, 0)
-            Label.Text = Options.Name
-            Label.TextColor3 = Color3.fromRGB(240, 240, 240)
-            Label.TextSize = 14
-            Label.Font = Enum.Font.SourceSans
-            Label.TextXAlignment = Enum.TextXAlignment.Left
-            Label.BackgroundTransparency = 1
-            
-            local Trigger = Instance.new("TextButton", TglFrame)
-            Trigger.Size = UDim2.new(0, 45, 0, 22)
-            Trigger.Position = UDim2.new(1, -55, 0.5, -11)
-            Trigger.BackgroundColor3 = Options.CurrentValue and Color3.fromHex("#f0a12b") or Color3.fromRGB(70, 70, 70)
-            Trigger.Text = ""
-            Instance.new("UICorner", Trigger).CornerRadius = UDim.new(1, 0)
-            
-            local Ball = Instance.new("Frame", Trigger)
-            Ball.Size = UDim2.new(0, 16, 0, 16)
-            Ball.Position = Options.CurrentValue and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
-            Ball.BackgroundColor3 = Color3.fromHex("#FACCCE")
-            Instance.new("UICorner", Ball).CornerRadius = UDim.new(1, 0)
-            
-            local state = Options.CurrentValue
-            Trigger.MouseButton1Click:Connect(function()
-                state = not state
-                TweenService:Create(Trigger, TweenInfo.new(0.2), {BackgroundColor3 = state and Color3.fromHex("#f0a12b") or Color3.fromRGB(70, 70, 70)}):Play()
-                TweenService:Create(Ball, TweenInfo.new(0.2), {Position = state and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)}):Play()
-                Options.Callback(state)
-            end)
-        end
-        
-        function TabObj:CreateSlider(Options)
-            local SldFrame = Instance.new("Frame", Page)
-            SldFrame.Size = UDim2.new(1, -10, 0, 50)
-            SldFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-            Instance.new("UICorner", SldFrame).CornerRadius = UDim.new(0, 6)
-            
-            local Label = Instance.new("TextLabel", SldFrame)
-            Label.Size = UDim2.new(0.6, 0, 0, 25)
-            Label.Position = UDim2.new(0, 10, 0, 0)
-            Label.Text = Options.Name
-            Label.TextColor3 = Color3.fromRGB(240, 240, 240)
-            Label.TextSize = 14
-            Label.Font = Enum.Font.SourceSans
-            Label.TextXAlignment = Enum.TextXAlignment.Left
-            Label.BackgroundTransparency = 1
-            
-            local ValueLabel = Instance.new("TextLabel", SldFrame)
-            ValueLabel.Size = UDim2.new(0.3, 0, 0, 25)
-            ValueLabel.Position = UDim2.new(1, -110, 0, 0)
-            ValueLabel.Text = tostring(Options.CurrentValue)
-            ValueLabel.TextColor3 = Color3.fromHex("#f0a12b")
-            ValueLabel.TextSize = 14
-            ValueLabel.Font = Enum.Font.SourceSansBold
-            ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
-            ValueLabel.BackgroundTransparency = 1
-            
-            local SlideTrack = Instance.new("TextButton", SldFrame)
-            SlideTrack.Size = UDim2.new(1, -20, 0, 6)
-            SlideTrack.Position = UDim2.new(0, 10, 0, 32)
-            SlideTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            SlideTrack.Text = ""
-            Instance.new("UICorner", SlideTrack)
-            
-            local SlideFill = Instance.new("Frame", SlideTrack)
-            local percent = (Options.CurrentValue - Options.Range[1]) / (Options.Range[2] - Options.Range[1])
-            SlideFill.Size = UDim2.new(percent, 0, 1, 0)
-            SlideFill.BackgroundColor3 = Color3.fromHex("#f0a12b")
-            Instance.new("UICorner", SlideFill)
-            
-            local dragging = false
-            local function updateSlider(input)
-                local pos = math.clamp((input.Position.X - SlideTrack.AbsolutePosition.X) / SlideTrack.AbsoluteSize.X, 0, 1)
-                local val = math.floor(Options.Range[1] + (pos * (Options.Range[2] - Options.Range[1])))
-                ValueLabel.Text = tostring(val)
-                SlideFill.Size = UDim2.new(pos, 0, 1, 0)
-                Options.Callback(val)
-            end
-            
-            SlideTrack.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = true
-                    updateSlider(input)
-                end
-            end)
-            
-            UserInputService.InputChanged:Connect(function(input)
-                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                    updateSlider(input)
-                end
-            end)
-            
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = false
-                end
-            end)
-        end
-        
-        function TabObj:CreateButton(Options)
-            local Btn = Instance.new("TextButton", Page)
-            Btn.Size = UDim2.new(1, -10, 0, 38)
-            Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-            Btn.Text = Options.Name
-            Btn.TextColor3 = Color3.fromHex("#FACCCE")
-            Btn.TextSize = 14
-            Btn.Font = Enum.Font.SourceSansBold
-            Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
-            
-            local Stroke = Instance.new("UIStroke", Btn)
-            Stroke.Color = Color3.fromHex("#f0a12b")
-            Stroke.Thickness = 1
-            
-            Btn.MouseButton1Click:Connect(Options.Callback)
-        end
-        
-        return TabObj
-    end
-    
-    function WindowObj:Notify(NotifSettings)
-        local NotifFrame = Instance.new("Frame", UI)
-        NotifFrame.Size = UDim2.new(0, 240, 0, 65)
-        NotifFrame.Position = UDim2.new(1, -260, 1, -80)
-        NotifFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        Instance.new("UICorner", NotifFrame)
-        local S = Instance.new("UIStroke", NotifFrame)
-        S.Color = Color3.fromHex("#f0a12b")
-        
-        local T = Instance.new("TextLabel", NotifFrame)
-        T.Size = UDim2.new(1, -20, 0, 25)
-        T.Position = UDim2.new(0, 10, 0, 5)
-        T.Text = NotifSettings.Title
-        T.TextColor3 = Color3.fromHex("#FACCCE")
-        T.Font = Enum.Font.SourceSansBold
-        T.TextXAlignment = Enum.TextXAlignment.Left
-        T.BackgroundTransparency = 1
-        
-        local C = Instance.new("TextLabel", NotifFrame)
-        C.Size = UDim2.new(1, -20, 0, 30)
-        C.Position = UDim2.new(0, 10, 0, 28)
-        C.Text = NotifSettings.Content
-        C.TextColor3 = Color3.fromRGB(200, 200, 200)
-        C.Font = Enum.Font.SourceSans
-        C.TextSize = 12
-        C.TextXAlignment = Enum.TextXAlignment.Left
-        C.BackgroundTransparency = 1
-        
-        task.delay(NotifSettings.Duration or 3, function()
-            NotifFrame:Destroy()
-        end)
-    end
-    
-    return WindowObj
+-- [ SISTEM GENERATOR OBYEK REAL RAYFIELD ]
+local BaseGui = Instance.new("ScreenGui")
+BaseGui.Name = "kacang55_RayfieldEngine"
+if CoreGui:FindFirstChild(BaseGui.Name) then CoreGui[BaseGui.Name]:Destroy() end
+pcall(function() BaseGui.Parent = (gethiddenui or gethui or function() return CoreGui end)() end)
+
+local Main = Instance.new("Frame", BaseGui)
+Main.Size = UDim2.new(0, 520, 0, 360)
+Main.Position = UDim2.new(0.5, -260, 0.5, -180)
+Main.BackgroundColor3 = RayfieldLibrary.Theme.Default.Background
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+
+local Topbar = Instance.new("Frame", Main)
+Topbar.Size = UDim2.new(1, 0, 0, 45)
+Topbar.BackgroundColor3 = RayfieldLibrary.Theme.Default.Topbar
+Instance.new("UICorner", Topbar).CornerRadius = UDim.new(0, 10)
+
+local Title = Instance.new("TextLabel", Topbar)
+Title.Size = UDim2.new(1, -100, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = RayfieldLibrary.Theme.Default.TabTextColor
+Title.TextSize = 18
+Title.Font = Enum.Font.SourceSansBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local Close = Instance.new("TextButton", Topbar)
+Close.Size = UDim2.new(0, 30, 0, 30)
+Close.Position = UDim2.new(1, -40, 0, 7.5)
+Close.Text = "X"
+Close.TextColor3 = RayfieldLibrary.Theme.Default.TabBackgroundSelected
+Close.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Instance.new("UICorner", Close).CornerRadius = UDim.new(1, 0)
+Close.MouseButton1Click:Connect(function() BaseGui:Destroy() end)
+
+local TabScroller = Instance.new("ScrollingFrame", Main)
+TabScroller.Size = UDim2.new(0, 130, 1, -60)
+TabScroller.Position = UDim2.new(0, 10, 0, 55)
+TabScroller.BackgroundTransparency = 1
+TabScroller.CanvasSize = UDim2.new(0, 0, 0, 0)
+TabScroller.ScrollBarThickness = 0
+local TabList = Instance.new("UIListLayout", TabScroller)
+TabList.Padding = UDim.new(0, 6)
+
+local ContentHolder = Instance.new("Frame", Main)
+ContentHolder.Size = UDim2.new(1, -165, 1, -60)
+ContentHolder.Position = UDim2.new(0, 150, 0, 55)
+ContentHolder.BackgroundTransparency = 1
+local PageLayout = Instance.new("UIPageLayout", ContentHolder)
+PageLayout.TweenTime = 0.2
+PageLayout.ScrollWheelInputEnabled = false
+
+function RayfieldLibrary:CreateWindow(Settings)
+	Title.Text = Settings.Name or "Mod Menu"
+	
+	local WindowHandler = {}
+	local firstPage = true
+	
+	function WindowHandler:CreateTab(Name)
+		local TabBtn = Instance.new("TextButton", TabScroller)
+		TabBtn.Size = UDim2.new(1, 0, 0, 35)
+		TabBtn.BackgroundColor3 = firstPage and RayfieldLibrary.Theme.Default.TabBackgroundSelected or RayfieldLibrary.Theme.Default.TabBackground
+		TabBtn.Text = Name
+		TabBtn.TextColor3 = firstPage and RayfieldLibrary.Theme.Default.SelectedTabTextColor or RayfieldLibrary.Theme.Default.TabTextColor
+		TabBtn.Font = Enum.Font.SourceSansBold
+		TabBtn.TextSize = 14
+		Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
+		
+		local Page = Instance.new("ScrollingFrame", ContentHolder)
+		Page.Size = UDim2.new(1, 0, 1, 0)
+		Page.BackgroundTransparency = 1
+		Page.CanvasSize = UDim2.new(0, 0, 0, 0)
+		Page.ScrollBarThickness = 3
+		Page.ScrollBarImageColor3 = RayfieldLibrary.Theme.Default.TabBackgroundSelected
+		local PageLayoutList = Instance.new("UIListLayout", Page)
+		PageLayoutList.Padding = UDim.new(0, 8)
+		
+		PageLayoutList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			Page.CanvasSize = UDim2.new(0, 0, 0, PageLayoutList.AbsoluteContentSize.Y + 15)
+		end)
+		
+		TabBtn.MouseButton1Click:Connect(function()
+			for _, btn in pairs(TabScroller:GetChildren()) do
+				if btn:IsA("TextButton") then
+					btn.BackgroundColor3 = RayfieldLibrary.Theme.Default.TabBackground
+					btn.TextColor3 = RayfieldLibrary.Theme.Default.TabTextColor
+				end
+			end
+			TabBtn.BackgroundColor3 = RayfieldLibrary.Theme.Default.TabBackgroundSelected
+			TabBtn.TextColor3 = RayfieldLibrary.Theme.Default.SelectedTabTextColor
+			PageLayout:JumpTo(Page)
+		end)
+		
+		firstPage = false
+		local TabHandler = {}
+		
+		function TabHandler:CreateSection(Text)
+			local Sec = Instance.new("Frame", Page)
+			Sec.Size = UDim2.new(1, -10, 0, 25)
+			Sec.BackgroundTransparency = 1
+			local Lbl = Instance.new("TextLabel", Sec)
+			Lbl.Size = UDim2.new(1, 0, 1, 0)
+			Lbl.Text = "— " .. Text .. " —"
+			Lbl.TextColor3 = RayfieldLibrary.Theme.Default.TabBackgroundSelected
+			Lbl.Font = Enum.Font.SourceSansBold
+			Lbl.TextSize = 14
+			Lbl.BackgroundTransparency = 1
+		end
+		
+		function TabHandler:CreateToggle(Options)
+			local Tgl = Instance.new("Frame", Page)
+			Tgl.Size = UDim2.new(1, -10, 0, 40)
+			Tgl.BackgroundColor3 = RayfieldLibrary.Theme.Default.ElementBackground
+			Instance.new("UICorner", Tgl).CornerRadius = UDim.new(0, 6)
+			Instance.new("UIStroke", Tgl).Color = RayfieldLibrary.Theme.Default.ElementStroke
+			
+			local Lbl = Instance.new("TextLabel", Tgl)
+			Lbl.Size = UDim2.new(0.7, 0, 1, 0)
+			Lbl.Position = UDim2.new(0, 10, 0, 0)
+			Lbl.Text = Options.Name
+			Lbl.TextColor3 = RayfieldLibrary.Theme.Default.TextColor
+			Lbl.TextSize = 14
+			Lbl.Font = Enum.Font.SourceSans
+			Lbl.TextXAlignment = Enum.TextXAlignment.Left
+			Lbl.BackgroundTransparency = 1
+			
+			local Trigger = Instance.new("TextButton", Tgl)
+			Trigger.Size = UDim2.new(0, 42, 0, 22)
+			Trigger.Position = UDim2.new(1, -52, 0.5, -11)
+			Trigger.BackgroundColor3 = Options.CurrentValue and RayfieldLibrary.Theme.Default.ToggleEnabled or RayfieldLibrary.Theme.Default.ToggleDisabled
+			Trigger.Text = ""
+			Instance.new("UICorner", Trigger).CornerRadius = UDim.new(1, 0)
+			local S = Instance.new("UIStroke", Trigger)
+			S.Color = Options.CurrentValue and RayfieldLibrary.Theme.Default.ToggleEnabledStroke or RayfieldLibrary.Theme.Default.ToggleDisabledStroke
+			
+			local Ball = Instance.new("Frame", Trigger)
+			Ball.Size = UDim2.new(0, 14, 0, 14)
+			Ball.Position = Options.CurrentValue and UDim2.new(1, -18, 0.5, -7) or UDim2.new(0, 4, 0.5, -7)
+			Ball.BackgroundColor3 = RayfieldLibrary.Theme.Default.SliderStroke
+			Instance.new("UICorner", Ball).CornerRadius = UDim.new(1, 0)
+			
+			local active = Options.CurrentValue
+			Trigger.MouseButton1Click:Connect(function()
+				active = not active
+				TweenService:Create(Trigger, TweenInfo.new(0.15), {BackgroundColor3 = active and RayfieldLibrary.Theme.Default.ToggleEnabled or RayfieldLibrary.Theme.Default.ToggleDisabled}):Play()
+				TweenService:Create(S, TweenInfo.new(0.15), {Color = active and RayfieldLibrary.Theme.Default.ToggleEnabledStroke or RayfieldLibrary.Theme.Default.ToggleDisabledStroke}):Play()
+				TweenService:Create(Ball, TweenInfo.new(0.15), {Position = active and UDim2.new(1, -18, 0.5, -7) or UDim2.new(0, 4, 0.5, -7)}):Play()
+				Options.Callback(active)
+			end)
+		end
+		
+		function TabHandler:CreateSlider(Options)
+			local Sld = Instance.new("Frame", Page)
+			Sld.Size = UDim2.new(1, -10, 0, 50)
+			Sld.BackgroundColor3 = RayfieldLibrary.Theme.Default.ElementBackground
+			Instance.new("UICorner", Sld).CornerRadius = UDim.new(0, 6)
+			
+			local Lbl = Instance.new("TextLabel", Sld)
+			Lbl.Size = UDim2.new(0.6, 0, 0, 25)
+			Lbl.Position = UDim2.new(0, 10, 0, 2)
+			Lbl.Text = Options.Name
+			Lbl.TextColor3 = RayfieldLibrary.Theme.Default.TextColor
+			Lbl.TextSize = 14
+			Lbl.Font = Enum.Font.SourceSans
+			Lbl.TextXAlignment = Enum.TextXAlignment.Left
+			Lbl.BackgroundTransparency = 1
+			
+			local ValLbl = Instance.new("TextLabel", Sld)
+			ValLbl.Size = UDim2.new(0.3, 0, 0, 25)
+			ValLbl.Position = UDim2.new(1, -110, 0, 2)
+			ValLbl.Text = tostring(Options.CurrentValue)
+			ValLbl.TextColor3 = RayfieldLibrary.Theme.Default.SliderBackground
+			ValLbl.TextSize = 14
+			ValLbl.Font = Enum.Font.SourceSansBold
+			ValLbl.TextXAlignment = Enum.TextXAlignment.Right
+			ValLbl.BackgroundTransparency = 1
+			
+			local Track = Instance.new("TextButton", Sld)
+			Track.Size = UDim2.new(1, -20, 0, 6)
+			Track.Position = UDim2.new(0, 10, 0, 34)
+			Track.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+			Track.Text = ""
+			Instance.new("UICorner", Track)
+			
+			local Fill = Instance.new("Frame", Track)
+			local startPercent = (Options.CurrentValue - Options.Range[1]) / (Options.Range[2] - Options.Range[1])
+			Fill.Size = UDim2.new(math.clamp(startPercent, 0, 1), 0, 1, 0)
+			Fill.BackgroundColor3 = RayfieldLibrary.Theme.Default.SliderBackground
+			Instance.new("UICorner", Fill)
+			
+			local isDragging = false
+			local function parseInput(input)
+				local delta = math.clamp((input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
+				local val = math.floor(Options.Range[1] + (delta * (Options.Range[2] - Options.Range[1])))
+				ValLbl.Text = tostring(val)
+				Fill.Size = UDim2.new(delta, 0, 1, 0)
+				Options.Callback(val)
+			end
+			
+			Track.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					isDragging = true; parseInput(input)
+				end
+			end)
+			UserInputService.InputChanged:Connect(function(input)
+				if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+					parseInput(input)
+				end
+			end)
+			UserInputService.InputEnded:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					isDragging = false
+				end
+			end)
+		end
+		
+		function TabHandler:CreateButton(Options)
+			local Btn = Instance.new("TextButton", Page)
+			Btn.Size = UDim2.new(1, -10, 0, 36)
+			Btn.BackgroundColor3 = Color3.fromRGB(42, 42, 42)
+			Btn.Text = Options.Name
+			Btn.TextColor3 = RayfieldLibrary.Theme.Default.TabTextColor
+			Btn.TextSize = 14
+			Btn.Font = Enum.Font.SourceSansBold
+			Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+			local Stk = Instance.new("UIStroke", Btn)
+			Stk.Color = RayfieldLibrary.Theme.Default.TabBackgroundSelected
+			
+			Btn.MouseButton1Click:Connect(Options.Callback)
+		end
+		
+		return TabHandler
+	end
+	
+	function WindowHandler:Notify(Config)
+		local N = Instance.new("Frame", BaseGui)
+		N.Size = UDim2.new(0, 230, 0, 60)
+		N.Position = UDim2.new(1, -250, 1, -75)
+		N.BackgroundColor3 = RayfieldLibrary.Theme.Default.NotificationBackground
+		Instance.new("UICorner", N).CornerRadius = UDim.new(0, 8)
+		Instance.new("UIStroke", N).Color = RayfieldLibrary.Theme.Default.TabBackgroundSelected
+		
+		local T = Instance.new("TextLabel", N)
+		T.Size = UDim2.new(1, -20, 0, 22)
+		T.Position = UDim2.new(0, 10, 0, 4)
+		T.Text = Config.Title or "Notifikasi"
+		T.TextColor3 = RayfieldLibrary.Theme.Default.TabTextColor
+		T.Font = Enum.Font.SourceSansBold
+		T.TextSize = 14
+		T.TextXAlignment = Enum.TextXAlignment.Left
+		T.BackgroundTransparency = 1
+		
+		local C = Instance.new("TextLabel", N)
+		C.Size = UDim2.new(1, -20, 0, 30)
+		C.Position = UDim2.new(0, 10, 0, 24)
+		C.Text = Config.Content or ""
+		C.TextColor3 = Color3.fromRGB(190, 190, 190)
+		C.Font = Enum.Font.SourceSans
+		C.TextSize = 12
+		C.TextXAlignment = Enum.TextXAlignment.Left
+		C.BackgroundTransparency = 1
+		
+		task.delay(Config.Duration or 3, function() N:Destroy() end)
+	end
+	
+	return WindowHandler
 end
 
 -- =================================================================
--- MOD MENU UTAMA KAMU (kacang55 Premium Mod)
+-- SISTEM LUAS MOD SEBENARNYA (STABILIZED CORE)
 -- =================================================================
 
-local Window = Rayfield:CreateWindow({
-   Name = "kacang55 Premium Mod",
-   LoadingTitle = "Mengintegrasikan kacang55 Ultimate...",
-   ConfigurationSaving = { Enabled = true, FolderName = "kacang55_Configs", FileName = "MainConfig" },
-   Discord = { Enabled = false },
-   KeySystem = false,
-})
+local Window = RayfieldLibrary:CreateWindow({ Name = "kacang55 Premium Mod" })
 
 local States = {
     Head = 0, Torso = 0, Arms = 0, Legs = 0,
     WalkSpeed = 16, JumpPower = 50,
     AutoApply = true, Noclip = false, ESP = false,
-    TouchTP = false,
-    Fly = false, FlySpeed = 50,
-    SpamSlide = false,
-    IsFreezing = false
+    TouchTP = false, Fly = false, FlySpeed = 50,
+    SpamSlide = false, IsFreezing = false
 }
 
 local player = Players.LocalPlayer
-local useKeybind
-task.spawn(function()
+local useKeybind = nil
+
+local function setupKeybindEvent()
     pcall(function()
-        useKeybind = player:WaitForChild("PlayerScripts")
-            :WaitForChild("Events")
-            :WaitForChild("temporary_events")
-            :WaitForChild("UseKeybind")
+        useKeybind = player:WaitForChild("PlayerScripts", 2)
+            :WaitForChild("Events", 2)
+            :WaitForChild("temporary_events", 2)
+            :WaitForChild("UseKeybind", 2)
     end)
-end)
+end
+setupKeybindEvent()
 
 local function applyBodyMod(char)
     if not char then return end
-    task.wait(0.5)
-    for _, v in pairs(char:GetChildren()) do
-        if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
-            if v.Name == "Head" then
-                v.Transparency = States.Head
-                if v:FindFirstChildOfClass("Decal") then v:FindFirstChildOfClass("Decal").Transparency = States.Head end
-            elseif v.Name:find("Torso") then v.Transparency = States.Torso
-            elseif v.Name:find("Arm") or v.Name:find("Hand") then v.Transparency = States.Arms
-            elseif v.Name:find("Leg") or v.Name:find("Foot") then v.Transparency = States.Legs end
+    pcall(function()
+        for _, v in pairs(char:GetChildren()) do
+            if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
+                if v.Name == "Head" then
+                    v.Transparency = States.Head
+                    if v:FindFirstChildOfClass("Decal") then v:FindFirstChildOfClass("Decal").Transparency = States.Head end
+                elseif v.Name:find("Torso") then v.Transparency = States.Torso
+                elseif v.Name:find("Arm") or v.Name:find("Hand") then v.Transparency = States.Arms
+                elseif v.Name:find("Leg") or v.Name:find("Foot") then v.Transparency = States.Legs end
+            end
         end
-    end
-    for _, acc in pairs(char:GetChildren()) do
-        if acc:IsA("Accessory") and acc:FindFirstChild("Handle") then
-            local handle = acc.Handle
-            local isHead = false
-            for _, att in pairs(handle:GetChildren()) do
-                if att:IsA("Attachment") then
-                    local n = att.Name:lower()
-                    if n:find("hair") or n:find("hat") or n:find("face") or n:find("head") or n:find("neck") then
-                        isHead = true
-                        break
+        for _, acc in pairs(char:GetChildren()) do
+            if acc:IsA("Accessory") and acc:FindFirstChild("Handle") then
+                local handle = acc.Handle
+                local isHead = false
+                for _, att in pairs(handle:GetChildren()) do
+                    if att:IsA("Attachment") then
+                        local n = att.Name:lower()
+                        if n:find("hair") or n:find("hat") or n:find("face") or n:find("head") or n:find("neck") then
+                            isHead = true; break
+                        end
                     end
                 end
-            end
-            if isHead or acc.Name:lower():find("hair") or acc.Name:lower():find("hat") then
-                handle.Transparency = States.Head
-            else
-                handle.Transparency = States.Torso
+                if isHead or acc.Name:lower():find("hair") or acc.Name:lower():find("hat") then
+                    handle.Transparency = States.Head
+                else
+                    handle.Transparency = States.Torso
+                end
             end
         end
-    end
+    end)
 end
 
-local function KillEmoteGui()
-    local CAS = game:GetService("ContextActionService")
-    local CG = game:GetService("CoreGui")
-    local PG = player:FindFirstChild("PlayerGui")
-    local targets = {"Emotes", "EmoteGUI", "Emote Menu"}
-    for _, name in pairs(targets) do
-        if CG:FindFirstChild(name) then CG[name]:Destroy() end
-        if PG and PG:FindFirstChild(name) then PG[name]:Destroy() end
-    end
-    pcall(function() CAS:UnbindCoreAction("Emote Menu") end)
-    for _, v in pairs(CG:GetDescendants()) do
-        if v:IsA("TextButton") and (v.Text == "Open" or v.Text == "Close") and v.Name == "Open" then
-            v.Parent:Destroy()
-        end
-    end
-end
-
+-- Fly Mobile Controller Setup
 local FlyGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-FlyGui.Name = "kacang55_FlyUI"
+FlyGui.Name = "kacang55_FlyUI_v2"
 FlyGui.Enabled = false
 
-local function createFlyBtn(name, pos, text)
+local function createFlyBtn(pos, text)
     local btn = Instance.new("TextButton", FlyGui)
-    btn.Size = UDim2.new(0, 60, 0, 60)
+    btn.Size = UDim2.new(0, 55, 0, 55)
     btn.Position = pos
-    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    btn.BackgroundTransparency = 0.5
-    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.BackgroundTransparency = 0.3
+    btn.TextColor3 = RayfieldLibrary.Theme.Default.TabBackgroundSelected
     btn.Text = text
-    btn.TextSize = 30
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(1, 0)
+    btn.TextSize = 24
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+    Instance.new("UIStroke", btn).Color = RayfieldLibrary.Theme.Default.SliderStroke
     return btn
 end
 
-local UpBtn = createFlyBtn("Up", UDim2.new(0.85, 0, 0.40, 0), "▲")
-local DownBtn = createFlyBtn("Down", UDim2.new(0.85, 0, 0.55, 0), "▼")
-
+local UpBtn = createFlyBtn(UDim2.new(0.82, 0, 0.45, 0), "▲")
+local DownBtn = createFlyBtn(UDim2.new(0.82, 0, 0.58, 0), "▼")
 local upDownDir = 0
+
 UpBtn.MouseButton1Down:Connect(function() upDownDir = 1 end)
 UpBtn.MouseButton1Up:Connect(function() upDownDir = 0 end)
 DownBtn.MouseButton1Down:Connect(function() upDownDir = -1 end)
@@ -506,16 +427,16 @@ local function startFly()
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
     local hrp = char.HumanoidRootPart
     
-    local att = Instance.new("Attachment", hrp)
+    local att = hrp:FindFirstChild("kacang55_FlyAtt") or Instance.new("Attachment", hrp)
     att.Name = "kacang55_FlyAtt"
     
-    local lv = Instance.new("LinearVelocity", hrp)
+    local lv = hrp:FindFirstChild("kacang55_FlyLV") or Instance.new("LinearVelocity", hrp)
     lv.Name = "kacang55_FlyLV"
     lv.MaxForce = 999999
     lv.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
     lv.Attachment0 = att
     
-    local bg = Instance.new("BodyGyro", hrp)
+    local bg = hrp:FindFirstChild("kacang55_FlyBG") or Instance.new("BodyGyro", hrp)
     bg.Name = "kacang55_FlyBG"
     bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
     bg.P = 3000
@@ -523,7 +444,7 @@ local function startFly()
     char.Humanoid.PlatformStand = true
     
     task.spawn(function()
-        while States.Fly and char:FindFirstChild("HumanoidRootPart") do
+        while States.Fly and char and char:FindFirstChild("HumanoidRootPart") do
             local cam = workspace.CurrentCamera
             lv.VectorVelocity = (char.Humanoid.MoveDirection * States.FlySpeed) + Vector3.new(0, upDownDir * States.FlySpeed, 0)
             bg.CFrame = cam.CFrame
@@ -536,59 +457,69 @@ local function startFly()
     end)
 end
 
-local Camera = workspace.CurrentCamera
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed or not States.TouchTP then return end
+-- Touch TP Fixer
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed or not States.TouchTP then return end
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
         local char = player.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
-            local ray = Camera:ScreenPointToRay(input.Position.X, input.Position.Y)
-            local raycastParams = RaycastParams.new()
-            raycastParams.FilterDescendantsInstances = {char}
-            raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+            local ray = workspace.CurrentCamera:ScreenPointToRay(input.Position.X, input.Position.Y)
+            local params = RaycastParams.new()
+            params.FilterDescendantsInstances = {char}
+            params.FilterType = Enum.RaycastFilterType.Exclude
             
-            local result = workspace:Raycast(ray.Origin, ray.Direction * 1000, raycastParams)
-            if result then
-                char.HumanoidRootPart.CFrame = CFrame.new(result.Position + Vector3.new(0, 3, 0))
-                Window:Notify({Title = "Teleport", Content = "Berhasil teleport ke lokasi!", Duration = 2})
+            local res = workspace:Raycast(ray.Origin, ray.Direction * 1500, params)
+            if res then
+                char.HumanoidRootPart.CFrame = CFrame.new(res.Position + Vector3.new(0, 3, 0))
+                Window:Notify({Title = "Teleport", Content = "Berhasil pindah tempat!", Duration = 1.5})
             end
         end
     end
 end)
 
-local RunService = game:GetService("RunService")
+-- Main RunService Loop (Anti Bug Rendering)
 RunService.Stepped:Connect(function()
-    if States.Noclip then
-        local char = player.Character
-        if char then
-            for _, v in pairs(char:GetDescendants()) do
-                if v:IsA("BasePart") then v.CanCollide = false end
+    local char = player.Character
+    if char then
+        if States.Noclip then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+        end
+        if char:FindFirstChild("Humanoid") then
+            if char.Humanoid.WalkSpeed ~= States.WalkSpeed then char.Humanoid.WalkSpeed = States.WalkSpeed end
+            if States.JumpPower > 50 then
+                char.Humanoid.UseJumpPower = true
+                if char.Humanoid.JumpPower ~= States.JumpPower then char.Humanoid.JumpPower = States.JumpPower end
             end
         end
     end
     if States.ESP then
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p.Character and p ~= player then
-                local highlight = p.Character:FindFirstChild("kacang55_ESP") or Instance.new("Highlight")
-                highlight.Name = "kacang55_ESP"
-                highlight.Parent = p.Character
-                highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                highlight.Enabled = true
-                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player and p.Character then
+                local hl = p.Character:FindFirstChild("kacang55_ESP")
+                if not hl then
+                    hl = Instance.new("Highlight")
+                    hl.Name = "kacang55_ESP"
+                    hl.FillColor = Color3.fromRGB(240, 161, 43)
+                    hl.OutlineColor = Color3.fromRGB(250, 204, 206)
+                    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    hl.Parent = p.Character
+                end
             end
         end
     end
 end)
 
--- [ DEKLARASI HALAMAN TABS ]
+-- [ DEKLARASI HALAMAN MENU ]
 local MainTab = Window:CreateTab("Movement")
 local VisualTab = Window:CreateTab("Visual")
 local EmoteTab = Window:CreateTab("Emotes")
 local ExploitTab = Window:CreateTab("Exploits")
 
-MainTab:CreateSection("Fly Controls")
+MainTab:CreateSection("Terbang (Fly)")
 MainTab:CreateToggle({
-   Name = "Fly (Terbang Mobile)",
+   Name = "Fly System Mobile",
    CurrentValue = false,
    Callback = function(v)
       States.Fly = v
@@ -596,40 +527,30 @@ MainTab:CreateToggle({
       if v then startFly() end
    end,
 })
-MainTab:CreateSlider({ Name = "Fly Speed", Range = {10, 300}, Increment = 1, CurrentValue = 50, Callback = function(v) States.FlySpeed = v end })
+MainTab:CreateSlider({ Name = "Kecepatan Terbang", Range = {10, 250}, CurrentValue = 50, Callback = function(v) States.FlySpeed = v end })
 
-MainTab:CreateSection("Movement Settings")
-MainTab:CreateSlider({ Name = "WalkSpeed", Range = {16, 300}, Increment = 1, CurrentValue = 16, Callback = function(v) States.WalkSpeed = v; pcall(function() player.Character.Humanoid.WalkSpeed = v end) end })
-MainTab:CreateSlider({ Name = "JumpPower", Range = {50, 600}, Increment = 1, CurrentValue = 50, Callback = function(v) States.JumpPower = v; pcall(function() player.Character.Humanoid.UseJumpPower = true; player.Character.Humanoid.JumpPower = v end) end })
+MainTab:CreateSection("Karakter")
+MainTab:CreateSlider({ Name = "Kecepatan Jalan (Speed)", Range = {16, 250}, CurrentValue = 16, Callback = function(v) States.WalkSpeed = v end })
+MainTab:CreateSlider({ Name = "Kekuatan Lompat (Jump)", Range = {50, 500}, CurrentValue = 50, Callback = function(v) States.JumpPower = v end })
 
-MainTab:CreateSection("Special Abilities")
+MainTab:CreateSection("Fitur Tambahan")
 MainTab:CreateToggle({ 
-    Name = "Noclip", 
+    Name = "Noclip (Tembus Tembok)", 
     CurrentValue = false, 
     Callback = function(v) 
         States.Noclip = v 
-        if not v then
-            pcall(function()
-                local char = player.Character
-                if char then
-                    for _, part in pairs(char:GetDescendants()) do
-                        if part:IsA("BasePart") then part.CanCollide = true end
-                    end
-                end
-            end)
-        end
     end 
 })
-MainTab:CreateToggle({ Name = "Touch Teleport (Klik Layar)", CurrentValue = false, Callback = function(v) States.TouchTP = v end })
+MainTab:CreateToggle({ Name = "Click / Touch Teleport", CurrentValue = false, Callback = function(v) States.TouchTP = v end })
 
-VisualTab:CreateSection("ESP & Invisible")
+VisualTab:CreateSection("Visual Player")
 VisualTab:CreateToggle({ 
-    Name = "ESP Players", 
+    Name = "Player ESP Highlight", 
     CurrentValue = false, 
     Callback = function(v) 
         States.ESP = v 
         if not v then
-            for _, p in pairs(game.Players:GetPlayers()) do
+            for _, p in pairs(Players:GetPlayers()) do
                 if p.Character and p.Character:FindFirstChild("kacang55_ESP") then
                     p.Character.kacang55_ESP:Destroy()
                 end
@@ -637,81 +558,76 @@ VisualTab:CreateToggle({
         end
     end 
 })
-VisualTab:CreateSlider({ Name = "Kepala & Rambut", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Head = v; applyBodyMod(player.Character) end })
-VisualTab:CreateSlider({ Name = "Badan", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Torso = v; applyBodyMod(player.Character) end })
-VisualTab:CreateSlider({ Name = "Tangan", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Arms = v; applyBodyMod(player.Character) end })
-VisualTab:CreateSlider({ Name = "Kaki", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Legs = v; applyBodyMod(player.Character) end })
 
-EmoteTab:CreateSection("Emote Unlocker")
-EmoteTab:CreateToggle({
-   Name = "Unlock Emotes Menu",
-   CurrentValue = false,
-   Callback = function(Value)
-      if Value then
-          loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Cahya12712/Kacang55modlua/refs/heads/main/emote.lua"))()
-          Window:Notify({Title = "Emote Mod", Content = "Emote GUI Dimuat!"})
-      else
-          KillEmoteGui()
-          Window:Notify({Title = "Emote Mod", Content = "Emote GUI Dihancurkan!"})
-      end
+VisualTab:CreateSection("Transparansi Tubuh (Invisible)")
+VisualTab:CreateSlider({ Name = "Kepala & Rambut", Range = {0, 1}, CurrentValue = 0, Callback = function(v) States.Head = v; applyBodyMod(player.Character) end })
+VisualTab:CreateSlider({ Name = "Badan", Range = {0, 1}, CurrentValue = 0, Callback = function(v) States.Torso = v; applyBodyMod(player.Character) end })
+VisualTab:CreateSlider({ Name = "Tangan", Range = {0, 1}, CurrentValue = 0, Callback = function(v) States.Arms = v; applyBodyMod(player.Character) end })
+VisualTab:CreateSlider({ Name = "Kaki", Range = {0, 1}, CurrentValue = 0, Callback = function(v) States.Legs = v; applyBodyMod(player.Character) end })
+
+EmoteTab:CreateSection("Unlocker")
+EmoteTab:CreateButton({
+   Name = "Muat Menu Emote Kustom",
+   Callback = function()
+       local success, err = pcall(function()
+           loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Cahya12712/Kacang55modlua/refs/heads/main/emote.lua"))()
+       end)
+       if success then
+           Window:Notify({Title = "Emote Berhasil", Content = "Daftar menu emote berhasil disuntikkan!"})
+       else
+           Window:Notify({Title = "Gagal", Content = "Tautan eksternal tidak merespon."})
+       end
    end,
 })
 
-ExploitTab:CreateSection("Macro & Automation")
+ExploitTab:CreateSection("Otomatisasi Game")
 ExploitTab:CreateToggle({
-    Name = "Spam Slide",
+    Name = "Spam Slide Otomatis",
     CurrentValue = false,
     Callback = function(Value)
         States.SpamSlide = Value
         if Value then
-            Window:Notify({Title = "Spam Slide", Content = "Spam Slide Diaktifkan! [ON]", Duration = 2})
+            if not useKeybind then setupKeybindEvent() end
             task.spawn(function()
                 while States.SpamSlide do
                     if useKeybind then
                         pcall(function()
                             useKeybind:Fire({Key = "Crouch", Down = true})
-                            task.wait(0.03)
+                            task.wait(0.02)
                             useKeybind:Fire({Key = "Crouch", Down = false})
                         end)
                     else
-                        Window:Notify({Title = "Error", Content = "Event UseKeybind tidak ditemukan di game ini!", Duration = 3})
-                        States.SpamSlide = false
+                        Window:Notify({Title = "Sistem Error", Content = "Event Crouch game tidak ditemukan!", Duration = 2})
                         break
                     end
-                    task.wait(0.05)
+                    task.wait(0.04)
                 end
             end)
-        else
-            Window:Notify({Title = "Spam Slide", Content = "Spam Slide Dimatikan! [OFF]", Duration = 2})
         end
     end,
 })
 
-ExploitTab:CreateSection("Lag Generation")
+ExploitTab:CreateSection("Perusak Server")
 ExploitTab:CreateButton({
     Name = "Freeze Client (0.5 Detik)",
     Callback = function()
         if States.IsFreezing then return end
         States.IsFreezing = true
-        Window:Notify({Title = "Freeze System", Content = "Sedang membekukan game (Freezing...)", Duration = 0.5})
         task.spawn(function()
-            for i = 1, 10000 do
-                print(string.rep("x", 500))
+            local start = os.clock()
+            while os.clock() - start < 0.5 do
+                local clear = string.rep("🔥kacang55🔥", 400)
             end
+            States.IsFreezing = false
         end)
-        task.wait(0.5)
-        States.IsFreezing = false
-        Window:Notify({Title = "Freeze System", Content = "Freeze Selesai!", Duration = 2})
     end,
 })
 
 player.CharacterAdded:Connect(function(char)
     if States.AutoApply then
-        task.wait(1)
+        task.wait(0.8)
         applyBodyMod(char)
-        pcall(function() char:WaitForChild("Humanoid").WalkSpeed = States.WalkSpeed end)
     end
 end)
 
-Window:Notify({Title = "kacang55 Ultimate", Content = "Berhasil Memuat Menu Tanpa Tracker!"})
-print("kacang55 Premium Mod successfully initialized securely! ✅")
+Window:Notify({Title = "kacang55 Ready", Content = "Mod Menu Version 2.0 Loaded Safely!", Duration = 3})
