@@ -1,6 +1,7 @@
 -- =================================================================
--- UNIFIED RAYFIELD INTERFACE SUITE (FULLY DE-TRACKED & STABLE)
+-- RE-ENGINEERED RAYFIELD UI SUITE (ANTI-BUG & STABLE MOBILE)
 -- Custom Color Palette: #f0a12b (Orange) & #FACCCE (Pink Pastel)
+-- Includes: Toggle Show/Hide (Minimize Button)
 -- =================================================================
 
 local function getService(name)
@@ -16,120 +17,148 @@ local HttpService = getService('HttpService')
 local RunService = getService('RunService')
 
 local RayfieldLibrary = {
-	Flags = {},
 	Theme = {
 		Default = {
-			TextColor = Color3.fromRGB(240, 240, 240),
 			Background = Color3.fromRGB(25, 25, 25),
 			Topbar = Color3.fromRGB(34, 34, 34),
-			Shadow = Color3.fromRGB(20, 20, 20),
-
-			NotificationBackground = Color3.fromRGB(25, 25, 25),
-			NotificationActionsBackground = Color3.fromRGB(240, 161, 43), -- #f0a12b
-
-			TabBackground = Color3.fromRGB(35, 35, 35),
-			TabStroke = Color3.fromRGB(50, 50, 50),
-			TabBackgroundSelected = Color3.fromRGB(240, 161, 43), -- #f0a12b
-			TabTextColor = Color3.fromRGB(250, 204, 206), -- #FACCCE
-			SelectedTabTextColor = Color3.fromRGB(25, 25, 25),
-
+			TextColor = Color3.fromRGB(240, 240, 240),
+			
+			TabBackground = Color3.fromRGB(40, 40, 40),
+			TabBackgroundSelected = Color3.fromHex("#f0a12b"),
+			TabTextColor = Color3.fromHex("#FACCCE"),
+			SelectedTabTextColor = Color3.fromRGB(20, 20, 20),
+			
 			ElementBackground = Color3.fromRGB(32, 32, 32),
-			ElementBackgroundHover = Color3.fromRGB(40, 40, 40),
-			SecondaryElementBackground = Color3.fromRGB(25, 25, 25),
-			ElementStroke = Color3.fromRGB(45, 45, 45),
-			SecondaryElementStroke = Color3.fromRGB(40, 40, 40),
-
-			SliderBackground = Color3.fromRGB(240, 161, 43), -- #f0a12b
-			SliderProgress = Color3.fromRGB(240, 161, 43), -- #f0a12b
-			SliderStroke = Color3.fromRGB(250, 204, 206), -- #FACCCE
-
-			ToggleBackground = Color3.fromRGB(30, 30, 30),
-			ToggleEnabled = Color3.fromRGB(240, 161, 43), -- #f0a12b
-			ToggleDisabled = Color3.fromRGB(100, 100, 100),
-			ToggleEnabledStroke = Color3.fromRGB(250, 204, 206), -- #FACCCE
-			ToggleDisabledStroke = Color3.fromRGB(125, 125, 125),
-			ToggleEnabledOuterStroke = Color3.fromRGB(80, 80, 80),
-			ToggleDisabledOuterStroke = Color3.fromRGB(55, 55, 55),
-
-			DropdownSelected = Color3.fromRGB(240, 161, 43), -- #f0a12b
-			DropdownUnselected = Color3.fromRGB(30, 30, 30),
-
-			InputBackground = Color3.fromRGB(30, 30, 30),
-			InputStroke = Color3.fromRGB(250, 204, 206), -- #FACCCE
-			PlaceholderColor = Color3.fromRGB(178, 178, 178)
+			ElementStroke = Color3.fromRGB(48, 48, 48),
+			
+			SliderBackground = Color3.fromHex("#f0a12b"),
+			SliderProgress = Color3.fromHex("#f0a12b"),
+			SliderStroke = Color3.fromHex("#FACCCE"),
+			
+			ToggleEnabled = Color3.fromHex("#f0a12b"),
+			ToggleDisabled = Color3.fromRGB(65, 65, 65)
 		}
 	}
 }
 
--- [ SISTEM GENERATOR OBYEK REAL RAYFIELD ]
+-- [ MAIN CONTAINER ENGINE ]
 local BaseGui = Instance.new("ScreenGui")
-BaseGui.Name = "kacang55_RayfieldEngine"
+BaseGui.Name = "kacang55_FixedEngine"
 if CoreGui:FindFirstChild(BaseGui.Name) then CoreGui[BaseGui.Name]:Destroy() end
 pcall(function() BaseGui.Parent = (gethiddenui or gethui or function() return CoreGui end)() end)
 
 local Main = Instance.new("Frame", BaseGui)
-Main.Size = UDim2.new(0, 520, 0, 360)
-Main.Position = UDim2.new(0.5, -260, 0.5, -180)
+Main.Size = UDim2.new(0, 520, 0, 350)
+Main.Position = UDim2.new(0.5, -260, 0.5, -175)
 Main.BackgroundColor3 = RayfieldLibrary.Theme.Default.Background
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 9)
+Instance.new("UIStroke", Main).Color = Color3.fromRGB(45, 45, 45)
 
+-- [ MINIMIZE FLOATING BUTTON ]
+local MinimizedBtn = Instance.new("TextButton", BaseGui)
+MinimizedBtn.Size = UDim2.new(0, 55, 0, 55)
+MinimizedBtn.Position = UDim2.new(0.1, 0, 0.1, 0)
+MinimizedBtn.BackgroundColor3 = RayfieldLibrary.Theme.Default.Topbar
+MinimizedBtn.Text = "k55"
+MinimizedBtn.TextColor3 = RayfieldLibrary.Theme.Default.TabBackgroundSelected
+MinimizedBtn.Font = Enum.Font.SourceSansBold
+MinimizedBtn.TextSize = 18
+MinimizedBtn.Visible = false
+MinimizedBtn.Active = true
+MinimizedBtn.Draggable = true
+Instance.new("UICorner", MinimizedBtn).CornerRadius = UDim.new(1, 0)
+local MinStroke = Instance.new("UIStroke", MinimizedBtn)
+MinStroke.Color = RayfieldLibrary.Theme.Default.TabTextColor
+
+MinimizedBtn.MouseButton1Click:Connect(function()
+    Main.Visible = true
+    MinimizedBtn.Visible = false
+end)
+
+-- [ TOPBAR CONTROL ]
 local Topbar = Instance.new("Frame", Main)
-Topbar.Size = UDim2.new(1, 0, 0, 45)
+Topbar.Size = UDim2.new(1, 0, 0, 42)
 Topbar.BackgroundColor3 = RayfieldLibrary.Theme.Default.Topbar
-Instance.new("UICorner", Topbar).CornerRadius = UDim.new(0, 10)
+local TopCorner = Instance.new("UICorner", Topbar)
+TopCorner.CornerRadius = UDim.new(0, 9)
 
 local Title = Instance.new("TextLabel", Topbar)
-Title.Size = UDim2.new(1, -100, 1, 0)
+Title.Size = UDim2.new(1, -120, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
 Title.TextColor3 = RayfieldLibrary.Theme.Default.TabTextColor
-Title.TextSize = 18
+Title.TextSize = 16
 Title.Font = Enum.Font.SourceSansBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Tombol Close (X)
 local Close = Instance.new("TextButton", Topbar)
-Close.Size = UDim2.new(0, 30, 0, 30)
-Close.Position = UDim2.new(1, -40, 0, 7.5)
-Close.Text = "X"
-Close.TextColor3 = RayfieldLibrary.Theme.Default.TabBackgroundSelected
+Close.Size = UDim2.new(0, 28, 0, 28)
+Close.Position = UDim2.new(1, -38, 0, 7)
+Close.Text = "✕"
+Close.TextColor3 = Color3.fromRGB(240, 80, 80)
 Close.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-Instance.new("UICorner", Close).CornerRadius = UDim.new(1, 0)
+Instance.new("UICorner", Close).CornerRadius = UDim.new(0, 6)
 Close.MouseButton1Click:Connect(function() BaseGui:Destroy() end)
 
-local TabScroller = Instance.new("ScrollingFrame", Main)
-TabScroller.Size = UDim2.new(0, 130, 1, -60)
-TabScroller.Position = UDim2.new(0, 10, 0, 55)
+-- Tombol Minimize (-)
+local Minimize = Instance.new("TextButton", Topbar)
+Minimize.Size = UDim2.new(0, 28, 0, 28)
+Minimize.Position = UDim2.new(1, -72, 0, 7)
+Minimize.Text = "—"
+Minimize.TextColor3 = RayfieldLibrary.Theme.Default.TabBackgroundSelected
+Minimize.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Minimize.Font = Enum.Font.SourceSansBold
+Instance.new("UICorner", Minimize).CornerRadius = UDim.new(0, 6)
+Minimize.MouseButton1Click:Connect(function()
+    Main.Visible = false
+    MinimizedBtn.Visible = true
+end)
+
+-- [ SIDEBAR & CONTENT SEPARATION ]
+local Sidebar = Instance.new("Frame", Main)
+Sidebar.Size = UDim2.new(0, 135, 1, -52)
+Sidebar.Position = UDim2.new(0, 10, 0, 47)
+Sidebar.BackgroundTransparency = 1
+
+local TabScroller = Instance.new("ScrollingFrame", Sidebar)
+TabScroller.Size = UDim2.new(1, 0, 1, 0)
 TabScroller.BackgroundTransparency = 1
 TabScroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 TabScroller.ScrollBarThickness = 0
-local TabList = Instance.new("UIListLayout", TabScroller)
-TabList.Padding = UDim.new(0, 6)
+local TabListLayout = Instance.new("UIListLayout", TabScroller)
+TabListLayout.Padding = UDim.new(0, 5)
 
 local ContentHolder = Instance.new("Frame", Main)
-ContentHolder.Size = UDim2.new(1, -165, 1, -60)
-ContentHolder.Position = UDim2.new(0, 150, 0, 55)
+ContentHolder.Size = UDim2.new(1, -165, 1, -52)
+ContentHolder.Position = UDim2.new(0, 155, 0, 47)
 ContentHolder.BackgroundTransparency = 1
+ContentHolder.ClipsDescendants = true
+
 local PageLayout = Instance.new("UIPageLayout", ContentHolder)
 PageLayout.TweenTime = 0.2
 PageLayout.ScrollWheelInputEnabled = false
 
+TabListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    TabScroller.CanvasSize = UDim2.new(0, 0, 0, TabListLayout.AbsoluteContentSize.Y)
+end)
+
 function RayfieldLibrary:CreateWindow(Settings)
 	Title.Text = Settings.Name or "Mod Menu"
-	
 	local WindowHandler = {}
-	local firstPage = true
+	local isFirstPage = true
 	
 	function WindowHandler:CreateTab(Name)
 		local TabBtn = Instance.new("TextButton", TabScroller)
-		TabBtn.Size = UDim2.new(1, 0, 0, 35)
-		TabBtn.BackgroundColor3 = firstPage and RayfieldLibrary.Theme.Default.TabBackgroundSelected or RayfieldLibrary.Theme.Default.TabBackground
+		TabBtn.Size = UDim2.new(1, 0, 0, 34)
+		TabBtn.BackgroundColor3 = isFirstPage and RayfieldLibrary.Theme.Default.TabBackgroundSelected or RayfieldLibrary.Theme.Default.TabBackground
 		TabBtn.Text = Name
-		TabBtn.TextColor3 = firstPage and RayfieldLibrary.Theme.Default.SelectedTabTextColor or RayfieldLibrary.Theme.Default.TabTextColor
+		TabBtn.TextColor3 = isFirstPage and RayfieldLibrary.Theme.Default.SelectedTabTextColor or RayfieldLibrary.Theme.Default.TabTextColor
 		TabBtn.Font = Enum.Font.SourceSansBold
-		TabBtn.TextSize = 14
+		TabBtn.TextSize = 13
 		Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
 		
 		local Page = Instance.new("ScrollingFrame", ContentHolder)
@@ -138,11 +167,12 @@ function RayfieldLibrary:CreateWindow(Settings)
 		Page.CanvasSize = UDim2.new(0, 0, 0, 0)
 		Page.ScrollBarThickness = 3
 		Page.ScrollBarImageColor3 = RayfieldLibrary.Theme.Default.TabBackgroundSelected
+		
 		local PageLayoutList = Instance.new("UIListLayout", Page)
-		PageLayoutList.Padding = UDim.new(0, 8)
+		PageLayoutList.Padding = UDim.new(0, 6)
 		
 		PageLayoutList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-			Page.CanvasSize = UDim2.new(0, 0, 0, PageLayoutList.AbsoluteContentSize.Y + 15)
+			Page.CanvasSize = UDim2.new(0, 0, 0, PageLayoutList.AbsoluteContentSize.Y + 10)
 		end)
 		
 		TabBtn.MouseButton1Click:Connect(function()
@@ -157,25 +187,25 @@ function RayfieldLibrary:CreateWindow(Settings)
 			PageLayout:JumpTo(Page)
 		end)
 		
-		firstPage = false
+		isFirstPage = false
 		local TabHandler = {}
 		
 		function TabHandler:CreateSection(Text)
 			local Sec = Instance.new("Frame", Page)
-			Sec.Size = UDim2.new(1, -10, 0, 25)
+			Sec.Size = UDim2.new(1, -8, 0, 24)
 			Sec.BackgroundTransparency = 1
 			local Lbl = Instance.new("TextLabel", Sec)
 			Lbl.Size = UDim2.new(1, 0, 1, 0)
 			Lbl.Text = "— " .. Text .. " —"
 			Lbl.TextColor3 = RayfieldLibrary.Theme.Default.TabBackgroundSelected
 			Lbl.Font = Enum.Font.SourceSansBold
-			Lbl.TextSize = 14
+			Lbl.TextSize = 13
 			Lbl.BackgroundTransparency = 1
 		end
 		
 		function TabHandler:CreateToggle(Options)
 			local Tgl = Instance.new("Frame", Page)
-			Tgl.Size = UDim2.new(1, -10, 0, 40)
+			Tgl.Size = UDim2.new(1, -8, 0, 38)
 			Tgl.BackgroundColor3 = RayfieldLibrary.Theme.Default.ElementBackground
 			Instance.new("UICorner", Tgl).CornerRadius = UDim.new(0, 6)
 			Instance.new("UIStroke", Tgl).Color = RayfieldLibrary.Theme.Default.ElementStroke
@@ -185,65 +215,62 @@ function RayfieldLibrary:CreateWindow(Settings)
 			Lbl.Position = UDim2.new(0, 10, 0, 0)
 			Lbl.Text = Options.Name
 			Lbl.TextColor3 = RayfieldLibrary.Theme.Default.TextColor
-			Lbl.TextSize = 14
+			Lbl.TextSize = 13
 			Lbl.Font = Enum.Font.SourceSans
 			Lbl.TextXAlignment = Enum.TextXAlignment.Left
 			Lbl.BackgroundTransparency = 1
 			
 			local Trigger = Instance.new("TextButton", Tgl)
-			Trigger.Size = UDim2.new(0, 42, 0, 22)
-			Trigger.Position = UDim2.new(1, -52, 0.5, -11)
+			Trigger.Size = UDim2.new(0, 40, 0, 20)
+			Trigger.Position = UDim2.new(1, -50, 0.5, -10)
 			Trigger.BackgroundColor3 = Options.CurrentValue and RayfieldLibrary.Theme.Default.ToggleEnabled or RayfieldLibrary.Theme.Default.ToggleDisabled
 			Trigger.Text = ""
 			Instance.new("UICorner", Trigger).CornerRadius = UDim.new(1, 0)
-			local S = Instance.new("UIStroke", Trigger)
-			S.Color = Options.CurrentValue and RayfieldLibrary.Theme.Default.ToggleEnabledStroke or RayfieldLibrary.Theme.Default.ToggleDisabledStroke
 			
 			local Ball = Instance.new("Frame", Trigger)
-			Ball.Size = UDim2.new(0, 14, 0, 14)
-			Ball.Position = Options.CurrentValue and UDim2.new(1, -18, 0.5, -7) or UDim2.new(0, 4, 0.5, -7)
+			Ball.Size = UDim2.new(0, 12, 0, 12)
+			Ball.Position = Options.CurrentValue and UDim2.new(1, -16, 0.5, -6) or UDim2.new(0, 4, 0.5, -6)
 			Ball.BackgroundColor3 = RayfieldLibrary.Theme.Default.SliderStroke
 			Instance.new("UICorner", Ball).CornerRadius = UDim.new(1, 0)
 			
 			local active = Options.CurrentValue
 			Trigger.MouseButton1Click:Connect(function()
 				active = not active
-				TweenService:Create(Trigger, TweenInfo.new(0.15), {BackgroundColor3 = active and RayfieldLibrary.Theme.Default.ToggleEnabled or RayfieldLibrary.Theme.Default.ToggleDisabled}):Play()
-				TweenService:Create(S, TweenInfo.new(0.15), {Color = active and RayfieldLibrary.Theme.Default.ToggleEnabledStroke or RayfieldLibrary.Theme.Default.ToggleDisabledStroke}):Play()
-				TweenService:Create(Ball, TweenInfo.new(0.15), {Position = active and UDim2.new(1, -18, 0.5, -7) or UDim2.new(0, 4, 0.5, -7)}):Play()
+				TweenService:Create(Trigger, TweenInfo.new(0.12), {BackgroundColor3 = active and RayfieldLibrary.Theme.Default.ToggleEnabled or RayfieldLibrary.Theme.Default.ToggleDisabled}):Play()
+				TweenService:Create(Ball, TweenInfo.new(0.12), {Position = active and UDim2.new(1, -16, 0.5, -6) or UDim2.new(0, 4, 0.5, -6)}):Play()
 				Options.Callback(active)
 			end)
 		end
 		
 		function TabHandler:CreateSlider(Options)
 			local Sld = Instance.new("Frame", Page)
-			Sld.Size = UDim2.new(1, -10, 0, 50)
+			Sld.Size = UDim2.new(1, -8, 0, 48)
 			Sld.BackgroundColor3 = RayfieldLibrary.Theme.Default.ElementBackground
 			Instance.new("UICorner", Sld).CornerRadius = UDim.new(0, 6)
 			
 			local Lbl = Instance.new("TextLabel", Sld)
-			Lbl.Size = UDim2.new(0.6, 0, 0, 25)
+			Lbl.Size = UDim2.new(0.6, 0, 0, 22)
 			Lbl.Position = UDim2.new(0, 10, 0, 2)
 			Lbl.Text = Options.Name
 			Lbl.TextColor3 = RayfieldLibrary.Theme.Default.TextColor
-			Lbl.TextSize = 14
+			Lbl.TextSize = 13
 			Lbl.Font = Enum.Font.SourceSans
 			Lbl.TextXAlignment = Enum.TextXAlignment.Left
 			Lbl.BackgroundTransparency = 1
 			
 			local ValLbl = Instance.new("TextLabel", Sld)
-			ValLbl.Size = UDim2.new(0.3, 0, 0, 25)
+			ValLbl.Size = UDim2.new(0.3, 0, 0, 22)
 			ValLbl.Position = UDim2.new(1, -110, 0, 2)
 			ValLbl.Text = tostring(Options.CurrentValue)
 			ValLbl.TextColor3 = RayfieldLibrary.Theme.Default.SliderBackground
-			ValLbl.TextSize = 14
+			ValLbl.TextSize = 13
 			ValLbl.Font = Enum.Font.SourceSansBold
 			ValLbl.TextXAlignment = Enum.TextXAlignment.Right
 			ValLbl.BackgroundTransparency = 1
 			
 			local Track = Instance.new("TextButton", Sld)
-			Track.Size = UDim2.new(1, -20, 0, 6)
-			Track.Position = UDim2.new(0, 10, 0, 34)
+			Track.Size = UDim2.new(1, -20, 0, 5)
+			Track.Position = UDim2.new(0, 10, 0, 32)
 			Track.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
 			Track.Text = ""
 			Instance.new("UICorner", Track)
@@ -282,11 +309,11 @@ function RayfieldLibrary:CreateWindow(Settings)
 		
 		function TabHandler:CreateButton(Options)
 			local Btn = Instance.new("TextButton", Page)
-			Btn.Size = UDim2.new(1, -10, 0, 36)
+			Btn.Size = UDim2.new(1, -8, 0, 34)
 			Btn.BackgroundColor3 = Color3.fromRGB(42, 42, 42)
 			Btn.Text = Options.Name
 			Btn.TextColor3 = RayfieldLibrary.Theme.Default.TabTextColor
-			Btn.TextSize = 14
+			Btn.TextSize = 13
 			Btn.Font = Enum.Font.SourceSansBold
 			Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
 			local Stk = Instance.new("UIStroke", Btn)
@@ -300,29 +327,29 @@ function RayfieldLibrary:CreateWindow(Settings)
 	
 	function WindowHandler:Notify(Config)
 		local N = Instance.new("Frame", BaseGui)
-		N.Size = UDim2.new(0, 230, 0, 60)
-		N.Position = UDim2.new(1, -250, 1, -75)
-		N.BackgroundColor3 = RayfieldLibrary.Theme.Default.NotificationBackground
+		N.Size = UDim2.new(0, 220, 0, 55)
+		N.Position = UDim2.new(1, -240, 1, -70)
+		N.BackgroundColor3 = RayfieldLibrary.Theme.Default.Background
 		Instance.new("UICorner", N).CornerRadius = UDim.new(0, 8)
 		Instance.new("UIStroke", N).Color = RayfieldLibrary.Theme.Default.TabBackgroundSelected
 		
 		local T = Instance.new("TextLabel", N)
-		T.Size = UDim2.new(1, -20, 0, 22)
+		T.Size = UDim2.new(1, -20, 0, 20)
 		T.Position = UDim2.new(0, 10, 0, 4)
-		T.Text = Config.Title or "Notifikasi"
+		T.Text = Config.Title or "Notification"
 		T.TextColor3 = RayfieldLibrary.Theme.Default.TabTextColor
 		T.Font = Enum.Font.SourceSansBold
-		T.TextSize = 14
+		T.TextSize = 13
 		T.TextXAlignment = Enum.TextXAlignment.Left
 		T.BackgroundTransparency = 1
 		
 		local C = Instance.new("TextLabel", N)
-		C.Size = UDim2.new(1, -20, 0, 30)
-		C.Position = UDim2.new(0, 10, 0, 24)
+		C.Size = UDim2.new(1, -20, 0, 25)
+		C.Position = UDim2.new(0, 10, 0, 22)
 		C.Text = Config.Content or ""
-		C.TextColor3 = Color3.fromRGB(190, 190, 190)
+		C.TextColor3 = Color3.fromRGB(180, 180, 180)
 		C.Font = Enum.Font.SourceSans
-		C.TextSize = 12
+		C.TextSize = 11
 		C.TextXAlignment = Enum.TextXAlignment.Left
 		C.BackgroundTransparency = 1
 		
@@ -333,10 +360,10 @@ function RayfieldLibrary:CreateWindow(Settings)
 end
 
 -- =================================================================
--- SISTEM LUAS MOD SEBENARNYA (STABILIZED CORE)
+-- MAIN MOD CONTENT SYSTEM (STABLE HARDWARE)
 -- =================================================================
 
-local Window = RayfieldLibrary:CreateWindow({ Name = "kacang55 Premium Mod" })
+local Window = RayfieldLibrary:CreateWindow({ Name = "kacang55 Premium Mod v2.5" })
 
 local States = {
     Head = 0, Torso = 0, Arms = 0, Legs = 0,
@@ -372,49 +399,29 @@ local function applyBodyMod(char)
                 elseif v.Name:find("Leg") or v.Name:find("Foot") then v.Transparency = States.Legs end
             end
         end
-        for _, acc in pairs(char:GetChildren()) do
-            if acc:IsA("Accessory") and acc:FindFirstChild("Handle") then
-                local handle = acc.Handle
-                local isHead = false
-                for _, att in pairs(handle:GetChildren()) do
-                    if att:IsA("Attachment") then
-                        local n = att.Name:lower()
-                        if n:find("hair") or n:find("hat") or n:find("face") or n:find("head") or n:find("neck") then
-                            isHead = true; break
-                        end
-                    end
-                end
-                if isHead or acc.Name:lower():find("hair") or acc.Name:lower():find("hat") then
-                    handle.Transparency = States.Head
-                else
-                    handle.Transparency = States.Torso
-                end
-            end
-        end
     end)
 end
 
--- Fly Mobile Controller Setup
+-- Fly Engine Mobile Setup
 local FlyGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-FlyGui.Name = "kacang55_FlyUI_v2"
+FlyGui.Name = "kacang55_FlyStability_v2"
 FlyGui.Enabled = false
 
 local function createFlyBtn(pos, text)
     local btn = Instance.new("TextButton", FlyGui)
-    btn.Size = UDim2.new(0, 55, 0, 55)
+    btn.Size = UDim2.new(0, 52, 0, 52)
     btn.Position = pos
     btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    btn.BackgroundTransparency = 0.3
+    btn.BackgroundTransparency = 0.2
     btn.TextColor3 = RayfieldLibrary.Theme.Default.TabBackgroundSelected
     btn.Text = text
-    btn.TextSize = 24
+    btn.TextSize = 22
     Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
-    Instance.new("UIStroke", btn).Color = RayfieldLibrary.Theme.Default.SliderStroke
     return btn
 end
 
-local UpBtn = createFlyBtn(UDim2.new(0.82, 0, 0.45, 0), "▲")
-local DownBtn = createFlyBtn(UDim2.new(0.82, 0, 0.58, 0), "▼")
+local UpBtn = createFlyBtn(UDim2.new(0.85, 0, 0.45, 0), "▲")
+local DownBtn = createFlyBtn(UDim2.new(0.85, 0, 0.58, 0), "▼")
 local upDownDir = 0
 
 UpBtn.MouseButton1Down:Connect(function() upDownDir = 1 end)
@@ -457,7 +464,7 @@ local function startFly()
     end)
 end
 
--- Touch TP Fixer
+-- Touch Teleport Engine
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed or not States.TouchTP then return end
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -471,13 +478,12 @@ UserInputService.InputBegan:Connect(function(input, processed)
             local res = workspace:Raycast(ray.Origin, ray.Direction * 1500, params)
             if res then
                 char.HumanoidRootPart.CFrame = CFrame.new(res.Position + Vector3.new(0, 3, 0))
-                Window:Notify({Title = "Teleport", Content = "Berhasil pindah tempat!", Duration = 1.5})
             end
         end
     end
 end)
 
--- Main RunService Loop (Anti Bug Rendering)
+-- Main Thread Runtime Loop (Stabilizer)
 RunService.Stepped:Connect(function()
     local char = player.Character
     if char then
@@ -501,8 +507,8 @@ RunService.Stepped:Connect(function()
                 if not hl then
                     hl = Instance.new("Highlight")
                     hl.Name = "kacang55_ESP"
-                    hl.FillColor = Color3.fromRGB(240, 161, 43)
-                    hl.OutlineColor = Color3.fromRGB(250, 204, 206)
+                    hl.FillColor = Color3.fromHex("#f0a12b")
+                    hl.OutlineColor = Color3.fromHex("#FACCCE")
                     hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                     hl.Parent = p.Character
                 end
@@ -511,7 +517,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- [ DEKLARASI HALAMAN MENU ]
+-- [ INTERFACE PAGES ]
 local MainTab = Window:CreateTab("Movement")
 local VisualTab = Window:CreateTab("Visual")
 local EmoteTab = Window:CreateTab("Emotes")
@@ -534,13 +540,7 @@ MainTab:CreateSlider({ Name = "Kecepatan Jalan (Speed)", Range = {16, 250}, Curr
 MainTab:CreateSlider({ Name = "Kekuatan Lompat (Jump)", Range = {50, 500}, CurrentValue = 50, Callback = function(v) States.JumpPower = v end })
 
 MainTab:CreateSection("Fitur Tambahan")
-MainTab:CreateToggle({ 
-    Name = "Noclip (Tembus Tembok)", 
-    CurrentValue = false, 
-    Callback = function(v) 
-        States.Noclip = v 
-    end 
-})
+MainTab:CreateToggle({ Name = "Noclip (Tembus Tembok)", CurrentValue = false, Callback = function(v) States.Noclip = v end })
 MainTab:CreateToggle({ Name = "Click / Touch Teleport", CurrentValue = false, Callback = function(v) States.TouchTP = v end })
 
 VisualTab:CreateSection("Visual Player")
@@ -559,28 +559,21 @@ VisualTab:CreateToggle({
     end 
 })
 
-VisualTab:CreateSection("Transparansi Tubuh (Invisible)")
+VisualTab:CreateSection("Transparansi")
 VisualTab:CreateSlider({ Name = "Kepala & Rambut", Range = {0, 1}, CurrentValue = 0, Callback = function(v) States.Head = v; applyBodyMod(player.Character) end })
 VisualTab:CreateSlider({ Name = "Badan", Range = {0, 1}, CurrentValue = 0, Callback = function(v) States.Torso = v; applyBodyMod(player.Character) end })
-VisualTab:CreateSlider({ Name = "Tangan", Range = {0, 1}, CurrentValue = 0, Callback = function(v) States.Arms = v; applyBodyMod(player.Character) end })
-VisualTab:CreateSlider({ Name = "Kaki", Range = {0, 1}, CurrentValue = 0, Callback = function(v) States.Legs = v; applyBodyMod(player.Character) end })
 
 EmoteTab:CreateSection("Unlocker")
 EmoteTab:CreateButton({
    Name = "Muat Menu Emote Kustom",
    Callback = function()
-       local success, err = pcall(function()
+       pcall(function()
            loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Cahya12712/Kacang55modlua/refs/heads/main/emote.lua"))()
        end)
-       if success then
-           Window:Notify({Title = "Emote Berhasil", Content = "Daftar menu emote berhasil disuntikkan!"})
-       else
-           Window:Notify({Title = "Gagal", Content = "Tautan eksternal tidak merespon."})
-       end
    end,
 })
 
-ExploitTab:CreateSection("Otomatisasi Game")
+ExploitTab:CreateSection("Otomatisasi")
 ExploitTab:CreateToggle({
     Name = "Spam Slide Otomatis",
     CurrentValue = false,
@@ -597,29 +590,12 @@ ExploitTab:CreateToggle({
                             useKeybind:Fire({Key = "Crouch", Down = false})
                         end)
                     else
-                        Window:Notify({Title = "Sistem Error", Content = "Event Crouch game tidak ditemukan!", Duration = 2})
                         break
                     end
                     task.wait(0.04)
                 end
             end)
         end
-    end,
-})
-
-ExploitTab:CreateSection("Perusak Server")
-ExploitTab:CreateButton({
-    Name = "Freeze Client (0.5 Detik)",
-    Callback = function()
-        if States.IsFreezing then return end
-        States.IsFreezing = true
-        task.spawn(function()
-            local start = os.clock()
-            while os.clock() - start < 0.5 do
-                local clear = string.rep("🔥kacang55🔥", 400)
-            end
-            States.IsFreezing = false
-        end)
     end,
 })
 
@@ -630,4 +606,4 @@ player.CharacterAdded:Connect(function(char)
     end
 end)
 
-Window:Notify({Title = "kacang55 Ready", Content = "Mod Menu Version 2.0 Loaded Safely!", Duration = 3})
+Window:Notify({Title = "kacang55 Premium", Content = "Sistem UI Diperbarui & Siap!", Duration = 3})
