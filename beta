@@ -15,66 +15,88 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- =================================================================
--- EFEK BACKLIGHT BERGERAK (ORANGE & PINK PASTEL)
+-- REVISI SYSTEM BACKLIGHT: AUTOMATIC PARENT DETECTOR
+-- Custom Colors: Orange (#f0a12b) & Pink Pastel (#FACCCE)
 -- =================================================================
 task.spawn(function()
     local CoreGui = game:GetService("CoreGui")
     local RunService = game:GetService("RunService")
-    local TweenService = game:GetService("TweenService")
     
-    -- Mencari Frame Utama Rayfield secara aman
-    local RayfieldGui = CoreGui:WaitForChild("Rayfield", 10)
-    if not RayfieldGui then return end
+    -- Tunggu hingga folder ScreenGui Rayfield terbuat
+    local RayfieldGui = CoreGui:WaitForChild("Rayfield", 15)
+    if not RayfieldGui then 
+        warn("Rayfield Gui tidak ditemukan di CoreGui!")
+        return 
+    end
     
-    local MainFrame = RayfieldGui:WaitForChild("Main", 10)
-    if not MainFrame then return end
+    -- Mencari Frame Utama berdasarkan karakteristik ukuran khas Rayfield
+    local MainFrame = nil
+    for _, child in pairs(RayfieldGui:GetChildren()) do
+        if child:IsA("Frame") and child.AbsoluteSize.X > 100 then
+            MainFrame = child
+            break
+        end
+    end
     
-    -- Membuat Canvas Backlight di belakang UI Utama
+    -- Jika pencarian pertama gagal, coba tunggu objek "Main" secara manual
+    if not MainFrame then
+        MainFrame = RayfieldGui:WaitForChild("Main", 5)
+    end
+    
+    if not MainFrame then 
+        warn("Main Frame Rayfield gagal dideteksi secara otomatis!")
+        return 
+    end
+
+    -- Memastikan properti dasar agar objek di belakangnya bisa terlihat jika ada outline clip
+    MainFrame.ClipsDescendants = false
+
+    -- Membuat Canvas Backlight
     local BacklightContainer = Instance.new("Frame")
     BacklightContainer.Name = "kacang55_Backlight"
-    BacklightContainer.Size = UDim2.new(1, 80, 1, 80)
-    BacklightContainer.Position = UDim2.new(0, -40, 0, -40)
+    BacklightContainer.Size = UDim2.new(1, 100, 1, 100)
+    BacklightContainer.Position = UDim2.new(0, -50, 0, -50)
     BacklightContainer.BackgroundTransparency = 1
-    BacklightContainer.ZIndex = MainFrame.ZIndex - 1
+    BacklightContainer.ZIndex = -10 -- Memaksa berada di posisi paling belakang dari seluruh elemen internal
     BacklightContainer.Parent = MainFrame
     
-    -- Struktur Gradasi Glow 1 (Orange)
+    -- Gradasi Glow 1 (Orange)
     local GlowOrange = Instance.new("ImageLabel")
     GlowOrange.Size = UDim2.new(1, 0, 1, 0)
     GlowOrange.BackgroundTransparency = 1
-    GlowOrange.Image = "rbxassetid://6015014023" -- Soft Glow Texture
+    GlowOrange.Image = "rbxassetid://6015014023" -- ID tekstur neon glow universal roblox
     GlowOrange.ImageColor3 = Color3.fromHex("#f0a12b")
-    GlowOrange.ImageTransparency = 0.4
-    GlowOrange.ZIndex = BacklightContainer.ZIndex
+    GlowOrange.ImageTransparency = 0.35
+    GlowOrange.ZIndex = -12
     GlowOrange.Parent = BacklightContainer
     
-    -- Struktur Gradasi Glow 2 (Pink Pastel)
+    -- Gradasi Glow 2 (Pink Pastel)
     local GlowPink = Instance.new("ImageLabel")
-    GlowPink.Size = UDim2.new(1, -20, 1, -20)
-    GlowPink.Position = UDim2.new(0, 10, 0, 10)
+    GlowPink.Size = UDim2.new(1, -10, 1, -10)
+    GlowPink.Position = UDim2.new(0, 5, 0, 5)
     GlowPink.BackgroundTransparency = 1
     GlowPink.Image = "rbxassetid://6015014023"
     GlowPink.ImageColor3 = Color3.fromHex("#FACCCE")
-    GlowPink.ImageTransparency = 0.5
-    GlowPink.ZIndex = BacklightContainer.ZIndex + 1
+    GlowPink.ImageTransparency = 0.45
+    GlowPink.ZIndex = -11
     GlowPink.Parent = BacklightContainer
 
-    -- Loop Pergerakan Mengalir / Bernapas (Animated Aura)
+    -- Loop Animasi Gelombang Berputar & Bernapas (RenderStepped)
     local angle = 0
     RunService.RenderStepped:Connect(function(dt)
         if not MainFrame or not MainFrame.Parent then return end
-        angle = angle + dt * 2 -- Mengatur kecepatan gerak rotasi aura
+        angle = angle + dt * 1.8 -- Kontrol kecepatan rotasi aura
         
-        -- Efek berdenyut lembut (pulsing wave)
-        local bounce = math.sin(angle) * 15
-        local alphaTransparency = 0.4 + (math.sin(angle * 1.5) * 0.1)
+        local pulse = math.sin(angle) * 20
+        local dynamicAlpha = 0.35 + (math.sin(angle * 2) * 0.08)
         
-        BacklightContainer.Size = UDim2.new(1, 80 + bounce, 1, 80 + bounce)
-        BacklightContainer.Position = UDim2.new(0, -(40 + bounce/2), 0, -(40 + bounce/2))
-        GlowOrange.ImageTransparency = alphaTransparency
-        GlowPink.Rotation = angle * 15 -- Gerakan memutar backlight
+        BacklightContainer.Size = UDim2.new(1, 100 + pulse, 1, 100 + pulse)
+        BacklightContainer.Position = UDim2.new(0, -(50 + pulse/2), 0, -(50 + pulse/2))
+        GlowOrange.ImageTransparency = dynamicAlpha
+        GlowPink.Rotation = angle * 12 -- Rotasi halus bauran warna pink pastel
     end)
 end)
+-- =================================================================
 
 -- =================================================================
 -- VARIABEL STATE & LOGIC UTAMAMU (LENGKAP TANPA DIURANGI)
