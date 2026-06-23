@@ -37,12 +37,12 @@ task.spawn(function()
     end)
 end)
 
--- [ LOGIC LOOP UNTUK HEADLESS & KORBLOX ]
+-- [ LOGIC LOOP UNTUK HEADLESS & KORBLOX COCOK UNTUK R6 & R15 ]
 task.spawn(function()
     while true do
         local char = player.Character
         if char then
-            -- Handler Headless
+            -- Handler Headless (Universal R6 / R15)
             if States.Headless then
                 pcall(function()
                     if char:FindFirstChild("Head") then
@@ -56,10 +56,25 @@ task.spawn(function()
                 end)
             end
             
-            -- Handler Korblox Right Leg
+            -- Handler Korblox Khusus Deteksi R6
             if States.Korblox then
                 pcall(function()
-                    if char:FindFirstChild("RightLowerLeg") and char:FindFirstChild("RightUpperLeg") and char:FindFirstChild("RightFoot") then
+                    -- Jika Karakter adalah R6 (Hanya memiliki satu bagian "Right Leg")
+                    if char:FindFirstChild("Right Leg") then
+                        local rightLeg = char["Right Leg"]
+                        rightLeg.Transparency = 1 -- Membuat kaki asli hilang (Efek Korblox R6 paling umum)
+                        
+                        -- Opsional: Jika ingin menambahkan objek Mesh manual ke dalam kaki R6
+                        local mesh = rightLeg:FindFirstChildOfClass("SpecialMesh")
+                        if not mesh then
+                            mesh = Instance.new("SpecialMesh", rightLeg)
+                        end
+                        mesh.MeshId = "rbxassetid://902942093"
+                        mesh.TextureId = "rbxassetid://902843398"
+                        mesh.Scale = Vector3.new(0.75, 0.75, 0.75) -- Skala kaki kurus Korblox
+                    
+                    -- Jika Karakter adalah R15 (Sebagai cadangan/fallback)
+                    elseif char:FindFirstChild("RightLowerLeg") then
                         char.RightLowerLeg.MeshId = "902942093"
                         char.RightLowerLeg.Transparency = 1
                         char.RightUpperLeg.MeshId = "http://www.roblox.com/asset/?id=902942096"
@@ -70,7 +85,7 @@ task.spawn(function()
                 end)
             end
         end
-        task.wait(1) -- Interval pengecekan (bawaan skrip asal)
+        task.wait(1)
     end
 end)
 
@@ -300,14 +315,13 @@ VisualTab:CreateToggle({
     end 
 })
 
--- INTEGRASI TOGGLE BARU: HEADLESS & KORBLOX
+-- TOGGLE HEADLESS & KORBLOX (DAPAT MENDETEKSI R6)
 VisualTab:CreateToggle({
     Name = "Client Headless",
     CurrentValue = false,
     Callback = function(v)
         States.Headless = v
         if not v then
-            -- Mengembalikan transparansi kepala ke normal saat toggle dimatikan
             pcall(function()
                 local head = player.Character:FindFirstChild("Head")
                 if head then
@@ -322,13 +336,21 @@ VisualTab:CreateToggle({
 })
 
 VisualTab:CreateToggle({
-    Name = "Client Korblox Right Leg",
+    Name = "Client Korblox Leg",
     CurrentValue = false,
     Callback = function(v)
         States.Korblox = v
         if not v then
-            -- Memaksa karakter memuat ulang bentuk aslinya saat dimatikan (paling aman lewat refresh/respawn internal game atau ganti manual jika didukung)
-            Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox dinonaktifkan. Efek normal kembali setelah Respawn!", Duration = 3})
+            pcall(function()
+                local char = player.Character
+                if char and char:FindFirstChild("Right Leg") then
+                    char["Right Leg"].Transparency = 0
+                    if char["Right Leg"]:FindFirstChildOfClass("SpecialMesh") then
+                        char["Right Leg"]:FindFirstChildOfClass("SpecialMesh"):Destroy()
+                    end
+                end
+            end)
+            Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox Dinonaktifkan! Efek normal setelah Respawn.", Duration = 3})
         end
     end
 })
