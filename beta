@@ -57,21 +57,29 @@ task.spawn(function()
             end
             
             -- Handler Korblox Khusus Deteksi R6
-            if States.Korblox then
+if States.Korblox then
                 pcall(function()
-                    -- Jika Karakter adalah R6 (Hanya memiliki satu bagian "Right Leg")
+                    -- Jika Karakter adalah R6 (Memiliki "Right Leg")
                     if char:FindFirstChild("Right Leg") then
                         local rightLeg = char["Right Leg"]
-                        rightLeg.Transparency = 1 -- Membuat kaki asli hilang (Efek Korblox R6 paling umum)
                         
-                        -- Opsional: Jika ingin menambahkan objek Mesh manual ke dalam kaki R6
-                        local mesh = rightLeg:FindFirstChildOfClass("SpecialMesh")
+                        -- Menghilangkan tekstur/warna asli kaki balok R6
+                        rightLeg.Transparency = 1 
+                        
+                        -- Membuat atau memperbarui Mesh Tulang agar mencuat keluar
+                        local mesh = rightLeg:FindFirstChild("KorbloxR6Mesh")
                         if not mesh then
-                            mesh = Instance.new("SpecialMesh", rightLeg)
+                            mesh = Instance.new("SpecialMesh")
+                            mesh.Name = "KorbloxR6Mesh"
+                            mesh.Parent = rightLeg
                         end
-                        mesh.MeshId = "rbxassetid://902942093"
-                        mesh.TextureId = "rbxassetid://902843398"
-                        mesh.Scale = Vector3.new(0.75, 0.75, 0.75) -- Skala kaki kurus Korblox
+                        mesh.MeshType = Enum.MeshType.FileMesh
+                        mesh.MeshId = "rbxassetid://902942093" -- ID Mesh Korblox Leg
+                        mesh.TextureId = "rbxassetid://902843398" -- ID Tekstur Korblox
+                        
+                        -- Mengatur skala dan posisi offset agar bentuk tulang kurus terlihat jelas dan pas di tanah
+                        mesh.Scale = Vector3.new(1.2, 1.2, 1.2) 
+                        mesh.Offset = Vector3.new(0, 0, 0)
                     
                     -- Jika Karakter adalah R15 (Sebagai cadangan/fallback)
                     elseif char:FindFirstChild("RightLowerLeg") then
@@ -84,10 +92,6 @@ task.spawn(function()
                     end
                 end)
             end
-        end
-        task.wait(1)
-    end
-end)
 
 -- [ FUNGSI KEPALA & RAMBUT - FORCE SCAN ]
 local function applyBodyMod(char)
