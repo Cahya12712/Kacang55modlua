@@ -17,8 +17,7 @@ local States = {
     Fly = false, FlySpeed = 50,
     SpamSlide = false,
     IsFreezing = false,
-    -- State Baru untuk Headless & Korblox
-    Headless = false,
+    -- State Tambahan Korblox R6
     Korblox = false
 }
 
@@ -37,63 +36,41 @@ task.spawn(function()
     end)
 end)
 
--- [ LOGIC LOOP UNTUK HEADLESS & KORBLOX (MENDUKUNG R6 DENGAN TULANG MENCUAT) ]
+-- [ LOGIC LOOP UNTUK KORBLOX R6 TULANG MENCUAT ]
 task.spawn(function()
     while true do
         local char = player.Character
-        if char then
-            -- Handler Headless (Universal R6 / R15)
-            if States.Headless then
-                pcall(function()
-                    if char:FindFirstChild("Head") then
-                        char.Head.Transparency = 1
-                        for _, v in pairs(char.Head:GetChildren()) do
-                            if v:IsA("Decal") then
-                                v.Transparency = 1
-                            end
-                        end
-                    end
-                end)
-            end
-            
-            -- Handler Korblox Khusus Deteksi R6 dengan Tulang Mencuat
-            if States.Korblox then
-                pcall(function()
-                    -- Jika Karakter adalah R6 (Memiliki satu bagian "Right Leg")
-                    if char:FindFirstChild("Right Leg") then
-                        local rightLeg = char["Right Leg"]
-                        
-                        -- Menghilangkan transparansi visual bawaan kaki balok asli R6
-                        rightLeg.Transparency = 1 
-                        
-                        -- Membuat atau memaksa SpecialMesh bertipe FileMesh agar tulang mencuat keluar dari hitbox
-                        local mesh = rightLeg:FindFirstChild("KorbloxR6Mesh")
-                        if not mesh then
-                            mesh = Instance.new("SpecialMesh")
-                            mesh.Name = "KorbloxR6Mesh"
-                            mesh.Parent = rightLeg
-                        end
-                        mesh.MeshType = Enum.MeshType.FileMesh
-                        mesh.MeshId = "rbxassetid://902942093" -- ID Mesh Korblox Leg
-                        mesh.TextureId = "rbxassetid://902843398" -- ID Tekstur Korblox
-                        
-                        -- Skala dinaikkan sedikit agar detail bentuk tulang kurus terlihat jelas dari balik pinggul R6
-                        mesh.Scale = Vector3.new(1.2, 1.2, 1.2) 
-                        mesh.Offset = Vector3.new(0, 0, 0)
+        if char and States.Korblox then
+            pcall(function()
+                -- Proteksi & Integrasi Struktur Avatar R6
+                if char:FindFirstChild("Right Leg") then
+                    local rightLeg = char["Right Leg"]
+                    rightLeg.Transparency = 1 -- Sembunyikan balok kaki asli R6
                     
-                    -- Jika Karakter adalah R15 (Sebagai cadangan/fallback)
-                    elseif char:FindFirstChild("RightLowerLeg") then
-                        char.RightLowerLeg.MeshId = "902942093"
-                        char.RightLowerLeg.Transparency = 1
-                        char.RightUpperLeg.MeshId = "http://www.roblox.com/asset/?id=902942096"
-                        char.RightUpperLeg.TextureID = "http://roblox.com/asset/?id=902843398"
-                        char.RightFoot.MeshId = "902942089"
-                        char.RightFoot.Transparency = 1
+                    local mesh = rightLeg:FindFirstChild("KorbloxR6Mesh")
+                    if not mesh then
+                        mesh = Instance.new("SpecialMesh")
+                        mesh.Name = "KorbloxR6Mesh"
+                        mesh.Parent = rightLeg
                     end
-                end)
-            end
+                    mesh.MeshType = Enum.MeshType.FileMesh
+                    mesh.MeshId = "rbxassetid://902942093"
+                    mesh.TextureId = "rbxassetid://902843398"
+                    mesh.Scale = Vector3.new(1.2, 1.2, 1.2) -- Ukuran ditingkatkan agar tulang menonjol keluar
+                    mesh.Offset = Vector3.new(0, 0, 0)
+                
+                -- Fallback / Cadangan jika sewaktu-waktu menggunakan R15
+                elseif char:FindFirstChild("RightLowerLeg") then
+                    char.RightLowerLeg.MeshId = "902942093"
+                    char.RightLowerLeg.Transparency = 1
+                    char.RightUpperLeg.MeshId = "http://www.roblox.com/asset/?id=902942096"
+                    char.RightUpperLeg.TextureID = "http://roblox.com/asset/?id=902843398"
+                    char.RightFoot.MeshId = "902942089"
+                    char.RightFoot.Transparency = 1
+                end
+            end)
         end
-        task.wait(1)
+        task.wait(0.6)
     end
 end)
 
@@ -238,7 +215,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- [ LOGIC LOOP BIASA ]
+-- [ LOGIC LOOP ]
 local RunService = game:GetService("RunService")
 RunService.Stepped:Connect(function()
     if States.Noclip then
@@ -323,45 +300,23 @@ VisualTab:CreateToggle({
     end 
 })
 
--- TOGGLE HEADLESS & KORBLOX (FIXED UNTUK AVATAR R6 & R15)
+-- TOGGLE KORBLOX R6 (TULANG MENCUAT OUTLINE)
 VisualTab:CreateToggle({
-    Name = "Client Headless",
-    CurrentValue = false,
-    Callback = function(v)
-        States.Headless = v
-        if not v then
-            pcall(function()
-                local head = player.Character:FindFirstChild("Head")
-                if head then
-                    head.Transparency = 0
-                    for _, child in pairs(head:GetChildren()) do
-                        if child:IsA("Decal") then child.Transparency = 0 end
-                    end
-                end
-            end)
-        end
-    end
-})
-
-VisualTab:CreateToggle({
-    Name = "Client Korblox Leg",
+    Name = "Client Korblox Leg (R6)",
     CurrentValue = false,
     Callback = function(v)
         States.Korblox = v
         if not v then
             pcall(function()
                 local char = player.Character
-                if char then
-                    -- Reset kaki jika R6
-                    if char:FindFirstChild("Right Leg") then
-                        char["Right Leg"].Transparency = 0
-                        if char["Right Leg"]:FindFirstChild("KorbloxR6Mesh") then
-                            char["Right Leg"].KorbloxR6Mesh:Destroy()
-                        end
+                if char and char:FindFirstChild("Right Leg") then
+                    char["Right Leg"].Transparency = 0
+                    if char["Right Leg"]:FindFirstChild("KorbloxR6Mesh") then
+                        char["Right Leg"].KorbloxR6Mesh:Destroy()
                     end
                 end
             end)
-            Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox Dinonaktifkan! Bentuk normal pulih total setelah Respawn.", Duration = 3})
+            Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox dinonaktifkan. Sempurna setelah Respawn!", Duration = 3})
         end
     end
 })
