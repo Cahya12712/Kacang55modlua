@@ -2,7 +2,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "kacang55 Premium Mod",
-   LoadingTitle = "Mengintegrasikan kacang55 Teleport...",
+   LoadingTitle = "Mengintegrasikan kacang55 Ultimate...",
    ConfigurationSaving = { Enabled = true, FolderName = "kacang55_Configs", FileName = "MainConfig" },
    Discord = { Enabled = false },
    KeySystem = false,
@@ -13,8 +13,66 @@ local States = {
     Head = 0, Torso = 0, Arms = 0, Legs = 0,
     WalkSpeed = 16, JumpPower = 50,
     AutoApply = true, Noclip = false, ESP = false,
-    TouchTP = false -- State baru untuk Teleport
+    TouchTP = false,
+    Fly = false, FlySpeed = 50,
+    SpamSlide = false,
+    IsFreezing = false,
+    -- State Tambahan Korblox R6
+    Korblox = false
 }
+
+-- Mengambil Event untuk Spam Slide
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Menggunakan pcall agar skrip tidak macet total jika event tidak ditemukan di game lain
+local useKeybind
+task.spawn(function()
+    pcall(function()
+        useKeybind = player:WaitForChild("PlayerScripts")
+            :WaitForChild("Events")
+            :WaitForChild("temporary_events")
+            :WaitForChild("UseKeybind")
+    end)
+end)
+
+-- [ LOGIC LOOP UNTUK KORBLOX R6 TULANG MENCUAT ]
+task.spawn(function()
+    while true do
+        local char = player.Character
+        if char and States.Korblox then
+            pcall(function()
+                -- Proteksi & Integrasi Struktur Avatar R6
+                if char:FindFirstChild("Right Leg") then
+                    local rightLeg = char["Right Leg"]
+                    rightLeg.Transparency = 1 -- Sembunyikan balok kaki asli R6
+                    
+                    local mesh = rightLeg:FindFirstChild("KorbloxR6Mesh")
+                    if not mesh then
+                        mesh = Instance.new("SpecialMesh")
+                        mesh.Name = "KorbloxR6Mesh"
+                        mesh.Parent = rightLeg
+                    end
+                    mesh.MeshType = Enum.MeshType.FileMesh
+                    mesh.MeshId = "rbxassetid://902942093"
+                    mesh.TextureId = "rbxassetid://902843398"
+                    mesh.Scale = Vector3.new(1.2, 1.2, 1.2) -- Ukuran ditingkatkan agar tulang menonjol keluar
+                    mesh.Offset = Vector3.new(0, 0, 0)
+                
+                -- Fallback / Cadangan jika sewaktu-waktu menggunakan R15
+                elseif char:FindFirstChild("RightLowerLeg") then
+                    char.RightLowerLeg.MeshId = "902942093"
+                    char.RightLowerLeg.Transparency = 1
+                    char.RightUpperLeg.MeshId = "http://www.roblox.com/asset/?id=902942096"
+                    char.RightUpperLeg.TextureID = "http://roblox.com/asset/?id=902843398"
+                    char.RightFoot.MeshId = "902942089"
+                    char.RightFoot.Transparency = 1
+                end
+            end)
+        end
+        task.wait(0.6)
+    end
+end)
 
 -- [ FUNGSI KEPALA & RAMBUT - FORCE SCAN ]
 local function applyBodyMod(char)
@@ -70,6 +128,69 @@ local function KillEmoteGui()
     end
 end
 
+-- [ FUNGSI FLY SYSTEM (LinearVelocity) ]
+local FlyGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+FlyGui.Name = "kacang55_FlyUI"
+FlyGui.Enabled = false
+
+local function createFlyBtn(name, pos, text)
+    local btn = Instance.new("TextButton", FlyGui)
+    btn.Size = UDim2.new(0, 60, 0, 60)
+    btn.Position = pos
+    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    btn.BackgroundTransparency = 0.5
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Text = text
+    btn.TextSize = 30
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(1, 0)
+    return btn
+end
+
+local UpBtn = createFlyBtn("Up", UDim2.new(0.85, 0, 0.40, 0), "▲")
+local DownBtn = createFlyBtn("Down", UDim2.new(0.85, 0, 0.55, 0), "▼")
+
+local upDownDir = 0
+UpBtn.MouseButton1Down:Connect(function() upDownDir = 1 end)
+UpBtn.MouseButton1Up:Connect(function() upDownDir = 0 end)
+DownBtn.MouseButton1Down:Connect(function() upDownDir = -1 end)
+DownBtn.MouseButton1Up:Connect(function() upDownDir = 0 end)
+
+local function startFly()
+    local char = game.Players.LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
+    
+    local att = Instance.new("Attachment", hrp)
+    att.Name = "kacang55_FlyAtt"
+    
+    local lv = Instance.new("LinearVelocity", hrp)
+    lv.Name = "kacang55_FlyLV"
+    lv.MaxForce = 999999
+    lv.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
+    lv.Attachment0 = att
+    
+    local bg = Instance.new("BodyGyro", hrp)
+    bg.Name = "kacang55_FlyBG"
+    bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bg.P = 3000
+    
+    char.Humanoid.PlatformStand = true
+    
+    task.spawn(function()
+        while States.Fly and char:FindFirstChild("HumanoidRootPart") do
+            local cam = workspace.CurrentCamera
+            lv.VectorVelocity = (char.Humanoid.MoveDirection * States.FlySpeed) + Vector3.new(0, upDownDir * States.FlySpeed, 0)
+            bg.CFrame = cam.CFrame
+            task.wait()
+        end
+        if lv then lv:Destroy() end
+        if att then att:Destroy() end
+        if bg then bg:Destroy() end
+        if char:FindFirstChild("Humanoid") then char.Humanoid.PlatformStand = false end
+    end)
+end
+
 -- [ LOGIC TOUCH TELEPORT ]
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
@@ -123,24 +244,83 @@ end)
 local MainTab = Window:CreateTab("Movement")
 local VisualTab = Window:CreateTab("Visual")
 local EmoteTab = Window:CreateTab("Emotes")
+local ExploitTab = Window:CreateTab("Exploits")
+
+MainTab:CreateSection("Fly Controls")
+MainTab:CreateToggle({
+   Name = "Fly (Terbang Mobile)",
+   CurrentValue = false,
+   Callback = function(v)
+      States.Fly = v
+      FlyGui.Enabled = v
+      if v then startFly() end
+   end,
+})
+MainTab:CreateSlider({ Name = "Fly Speed", Range = {10, 300}, Increment = 1, CurrentValue = 50, Callback = function(v) States.FlySpeed = v end })
 
 MainTab:CreateSection("Movement Settings")
 MainTab:CreateSlider({ Name = "WalkSpeed", Range = {16, 300}, Increment = 1, CurrentValue = 16, Callback = function(v) States.WalkSpeed = v; pcall(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end) end })
 MainTab:CreateSlider({ Name = "JumpPower", Range = {50, 600}, Increment = 1, CurrentValue = 50, Callback = function(v) States.JumpPower = v; pcall(function() game.Players.LocalPlayer.Character.Humanoid.UseJumpPower = true; game.Players.LocalPlayer.Character.Humanoid.JumpPower = v end) end })
 
 MainTab:CreateSection("Special Abilities")
-MainTab:CreateToggle({ Name = "Noclip", CurrentValue = false, Callback = function(v) States.Noclip = v end })
 MainTab:CreateToggle({ 
-    Name = "Touch Teleport (Klik Layar)", 
+    Name = "Noclip", 
     CurrentValue = false, 
     Callback = function(v) 
-        States.TouchTP = v 
-        Rayfield:Notify({Title = "Touch TP", Content = v and "Aktif! Klik/Sentuh untuk teleport." or "Nonaktif."})
+        States.Noclip = v 
+        if not v then
+            pcall(function()
+                local char = game.Players.LocalPlayer.Character
+                if char then
+                    for _, part in pairs(char:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = true
+                        end
+                    end
+                end
+            end)
+        end
+    end 
+})
+MainTab:CreateToggle({ Name = "Touch Teleport (Klik Layar)", CurrentValue = false, Callback = function(v) States.TouchTP = v end })
+
+VisualTab:CreateSection("ESP & Invisible")
+VisualTab:CreateToggle({ 
+    Name = "ESP Players", 
+    CurrentValue = false, 
+    Callback = function(v) 
+        States.ESP = v 
+        if not v then
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if p.Character and p.Character:FindFirstChild("kacang55_ESP") then
+                    p.Character.kacang55_ESP:Destroy()
+                end
+            end
+        end
     end 
 })
 
-VisualTab:CreateSection("ESP & Invisible")
-VisualTab:CreateToggle({ Name = "ESP Players", CurrentValue = false, Callback = function(v) States.ESP = v end })
+-- TOGGLE KORBLOX R6 (TULANG MENCUAT OUTLINE)
+VisualTab:CreateToggle({
+    Name = "Client Korblox Leg (R6)",
+    CurrentValue = false,
+    Callback = function(v)
+        States.Korblox = v
+        if not v then
+            pcall(function()
+                local char = player.Character
+                if char and char:FindFirstChild("Right Leg") then
+                    char["Right Leg"].Transparency = 0
+                    if char["Right Leg"]:FindFirstChild("KorbloxR6Mesh") then
+                        char["Right Leg"].KorbloxR6Mesh:Destroy()
+                    end
+                end
+            end)
+            Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox dinonaktifkan. Sempurna setelah Respawn!", Duration = 3})
+        end
+    end
+})
+
 VisualTab:CreateSlider({ Name = "Kepala & Rambut", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Head = v; applyBodyMod(game.Players.LocalPlayer.Character) end })
 VisualTab:CreateSlider({ Name = "Badan", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Torso = v; applyBodyMod(game.Players.LocalPlayer.Character) end })
 VisualTab:CreateSlider({ Name = "Tangan", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Arms = v; applyBodyMod(game.Players.LocalPlayer.Character) end })
@@ -152,7 +332,7 @@ EmoteTab:CreateToggle({
    CurrentValue = false,
    Callback = function(Value)
       if Value then
-          loadstring(game:HttpGetAsync("https://gist.githubusercontent.com/RedZenXYZ/3da6af1961efa275de6c3c2a6dbace03/raw/bb027f99cec0ea48ef9c5eabfb9116ddff20633d/FE%2520Emotes%2520Gui"))()
+          loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Cahya12712/Kacang55modlua/refs/heads/main/emote.lua"))()
           Rayfield:Notify({Title = "Emote Mod", Content = "Emote GUI Dimuat!"})
       else
           KillEmoteGui()
@@ -161,6 +341,59 @@ EmoteTab:CreateToggle({
    end,
 })
 
+-- [ INTEGRASI TAB EXPLOITS BARU ]
+ExploitTab:CreateSection("Macro & Automation")
+ExploitTab:CreateToggle({
+    Name = "Spam Slide",
+    CurrentValue = false,
+    Callback = function(Value)
+        States.SpamSlide = Value
+        if Value then
+            Rayfield:Notify({Title = "Spam Slide", Content = "Spam Slide Diaktifkan! [ON]", Duration = 2})
+            task.spawn(function()
+                while States.SpamSlide do
+                    if useKeybind then
+                        pcall(function()
+                            useKeybind:Fire({Key = "Crouch", Down = true})
+                            task.wait(0.03)
+                            useKeybind:Fire({Key = "Crouch", Down = false})
+                        end)
+                    else
+                        Rayfield:Notify({Title = "Error", Content = "Event UseKeybind tidak ditemukan di game ini!", Duration = 3})
+                        States.SpamSlide = false
+                        break
+                    end
+                    task.wait(0.05)
+                end
+            end)
+        else
+            Rayfield:Notify({Title = "Spam Slide", Content = "Spam Slide Dimatikan! [OFF]", Duration = 2})
+        end
+    end,
+})
+
+ExploitTab:CreateSection("Lag Generation")
+ExploitTab:CreateButton({
+    Name = "Freeze Client (0.5 Detik)",
+    Callback = function()
+        if States.IsFreezing then return end
+        States.IsFreezing = true
+
+        Rayfield:Notify({Title = "Freeze System", Content = "Sedang membekukan game (Freezing...)", Duration = 0.5})
+
+        task.spawn(function()
+            for i = 1, 10000 do
+                print(string.rep("x", 500))
+            end
+        end)
+
+        task.wait(0.5)
+        States.IsFreezing = false
+        Rayfield:Notify({Title = "Freeze System", Content = "Freeze Selesai!", Duration = 2})
+    end,
+})
+
+-- [ CHARACTER RE-APPLY ]
 game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
     if States.AutoApply then
         task.wait(1)
@@ -169,4 +402,5 @@ game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
     end
 end)
 
-Rayfield:Notify({Title = "kacang55 Ultimate", Content = "Teleportasi & Mod Ready!"})
+Rayfield:Notify({Title = "kacang55 Ultimate", Content = "Noclip, ESP & Spam Slide Integrated!"})
+print("Spam Slide & Freeze successfully integrated into Rayfield! ✅")
