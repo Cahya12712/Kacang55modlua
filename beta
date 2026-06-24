@@ -1,5 +1,5 @@
 -- [ CONFIGURATION: GANTI LINK RAW GITHUB DI SINI ]
-local releaseURL = "https://raw.githubusercontent.com/Cahya12712/Kacang55modlua/refs/heads/main/release.lua"
+local releaseURL = "https://raw.githubusercontent.com/Cahya12712/Kacang55modlua/refs/heads/main/Maincode"
 local betaURL    = "https://raw.githubusercontent.com/Cahya12712/Kacang55modlua/refs/heads/main/beta.lua"
 
 -- [ INTERFACE CREATION - LIGHTWEIGHT CUSTOM UI ]
