@@ -36,31 +36,62 @@ task.spawn(function()
     end)
 end)
 
--- [ LOGIC LOOP UNTUK KORBLOX R6 TULANG MENCUAT ]
+-- [ LOGIC LOOP UNTUK KORBLOX R6 TULANG MENCUAT - FIXED ]
 task.spawn(function()
     while true do
         local char = player.Character
         if char and States.Korblox then
             pcall(function()
-                -- Proteksi & Integrasi Struktur Avatar R6
+                -- ==================== HANDLING UTAMA: AVATAR R6 ====================
                 if char:FindFirstChild("Right Leg") then
                     local rightLeg = char["Right Leg"]
                     rightLeg.Transparency = 1 -- Sembunyikan balok kaki asli R6
                     
-                    local mesh = rightLeg:FindFirstChild("KorbloxR6Mesh")
+                    -- Cari atau buat Part Tiruan untuk menampung Mesh Korblox secara bebas
+                    local fakeLeg = char:FindFirstChild("kacang55_FakeKorblox")
+                    if not fakeLeg then
+                        fakeLeg = Instance.new("Part")
+                        fakeLeg.Name = "kacang55_FakeKorblox"
+                        fakeLeg.Size = Vector3.new(1, 2, 1) -- Ukuran standar kaki R6
+                        fakeLeg.CanCollide = false
+                        fakeLeg.Massless = true
+                        fakeLeg.Parent = char
+                        
+                        -- Membuat Weld agar posisi part tiruan menempel sempurna pada Right Leg asli
+                        local weld = Instance.new("Weld")
+                        weld.Name = "KorbloxWeld"
+                        weld.Part0 = rightLeg
+                        weld.Part1 = fakeLeg
+                        weld.C0 = CFrame.new(0, 0, 0)
+                        weld.Parent = fakeLeg
+                    end
+                    
+                    -- Pastikan Transparansi Part Tiruan tetap terlihat
+                    fakeLeg.Transparency = 0
+                    
+                    -- Cari atau buat SpecialMesh di dalam Part Tiruan
+                    local mesh = fakeLeg:FindFirstChild("Mesh")
                     if not mesh then
                         mesh = Instance.new("SpecialMesh")
-                        mesh.Name = "KorbloxR6Mesh"
-                        mesh.Parent = rightLeg
+                        mesh.Parent = fakeLeg
                     end
+                    
+                    -- Pasang ID Mesh dan Tekstur Korblox Original
                     mesh.MeshType = Enum.MeshType.FileMesh
                     mesh.MeshId = "rbxassetid://902942093"
                     mesh.TextureId = "rbxassetid://902843398"
-                    mesh.Scale = Vector3.new(1.2, 1.2, 1.2) -- Ukuran ditingkatkan agar tulang menonjol keluar
-                    mesh.Offset = Vector3.new(0, 0, 0)
+                    
+                    -- Skala disesuaikan agar tulang mencuat indah keluar dari sisa pinggul R6
+                    mesh.Scale = Vector3.new(1.1, 1.1, 1.1)
+                    mesh.Offset = Vector3.new(0, -0.05, 0) -- Dituner tipis ke tanah
                 
-                -- Fallback / Cadangan jika sewaktu-waktu menggunakan R15
+                -- ==================== HANDLING FALLBACK: AVATAR R15 ====================
                 elseif char:FindFirstChild("RightLowerLeg") then
+                    -- Hapus fake part R6 jika tidak sengaja terbawa ke map R15
+                    if char:FindFirstChild("kacang55_FakeKorblox") then
+                        char["kacang55_FakeKorblox"]:Destroy()
+                    end
+                    
                     char.RightLowerLeg.MeshId = "902942093"
                     char.RightLowerLeg.Transparency = 1
                     char.RightUpperLeg.MeshId = "http://www.roblox.com/asset/?id=902942096"
@@ -69,8 +100,21 @@ task.spawn(function()
                     char.RightFoot.Transparency = 1
                 end
             end)
+        else
+            -- Jika Toggle DIMATIKAN, bersihkan semua modifikasi secara rapi
+            pcall(function()
+                local char = player.Character
+                if char then
+                    if char:FindFirstChild("Right Leg") then
+                        char["Right Leg"].Transparency = 0
+                    end
+                    if char:FindFirstChild("kacang55_FakeKorblox") then
+                        char["kacang55_FakeKorblox"]:Destroy()
+                    end
+                end
+            end)
         end
-        task.wait(0.6)
+        task.wait(0.5)
     end
 end)
 
@@ -300,7 +344,7 @@ VisualTab:CreateToggle({
     end 
 })
 
--- TOGGLE KORBLOX R6 (TULANG MENCUAT OUTLINE)
+-- TOGGLE KORBLOX R6 (DENGAN REVISI PEMBERSIHAN FAKE PART)
 VisualTab:CreateToggle({
     Name = "Client Korblox Leg (R6)",
     CurrentValue = false,
@@ -309,14 +353,16 @@ VisualTab:CreateToggle({
         if not v then
             pcall(function()
                 local char = player.Character
-                if char and char:FindFirstChild("Right Leg") then
-                    char["Right Leg"].Transparency = 0
-                    if char["Right Leg"]:FindFirstChild("KorbloxR6Mesh") then
-                        char["Right Leg"].KorbloxR6Mesh:Destroy()
+                if char then
+                    if char:FindFirstChild("Right Leg") then
+                        char["Right Leg"].Transparency = 0
+                    end
+                    if char:FindFirstChild("kacang55_FakeKorblox") then
+                        char["kacang55_FakeKorblox"]:Destroy()
                     end
                 end
             end)
-            Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox dinonaktifkan. Sempurna setelah Respawn!", Duration = 3})
+            Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox dinonaktifkan secara bersih!", Duration = 3})
         end
     end
 })
