@@ -17,9 +17,9 @@ local States = {
     Fly = false, FlySpeed = 50,
     SpamSlide = false,
     IsFreezing = false,
-    -- State Tambahan Korblox R6 & Pengaturan Tinggi
-    Korblox = false,
-    KorbloxOffsetY = 0 -- Default 0, bisa diatur lewat slider
+    -- State Terpisah untuk R6 dan R15
+    KorbloxR6 = false,
+    KorbloxR15 = false
 }
 
 -- Mengambil Event untuk Spam Slide
@@ -37,82 +37,56 @@ task.spawn(function()
     end)
 end)
 
--- [ LOGIC LOOP UNTUK KORBLOX R6 TULANG MENCUAT - DENGAN PENGATURAN TINGGI ]
+-- [ LOGIC LOOP UNTUK KORBLOX R6 TULANG MENCUAT (FIXED HEIGHT 0.5) ]
 task.spawn(function()
     while true do
         local char = player.Character
-        if char and States.Korblox then
+        if char and States.KorbloxR6 then
             pcall(function()
-                -- ==================== HANDLING UTAMA: AVATAR R6 ====================
                 if char:FindFirstChild("Right Leg") then
                     local rightLeg = char["Right Leg"]
-                    rightLeg.Transparency = 1 -- Sembunyikan balok kaki asli R6
+                    rightLeg.Transparency = 1 -- Sembunyikan balok asli R6
                     
-                    -- Cari atau buat Part Tiruan untuk menampung Mesh Korblox secara bebas
+                    -- Buat Part Tiruan untuk menampung mesh R6
                     local fakeLeg = char:FindFirstChild("kacang55_FakeKorblox")
                     if not fakeLeg then
                         fakeLeg = Instance.new("Part")
                         fakeLeg.Name = "kacang55_FakeKorblox"
-                        fakeLeg.Size = Vector3.new(1, 2, 1) -- Ukuran standar kaki R6
+                        fakeLeg.Size = Vector3.new(1, 2, 1)
                         fakeLeg.CanCollide = false
                         fakeLeg.Massless = true
                         fakeLeg.Parent = char
                         
-                        -- Membuat Weld agar posisi part tiruan menempel sempurna pada Right Leg asli
+                        -- Membuat Weld dan langsung dinaikkan 0.5 sesuai hasil tes
                         local weld = Instance.new("Weld")
                         weld.Name = "KorbloxWeld"
                         weld.Part0 = rightLeg
                         weld.Part1 = fakeLeg
+                        weld.C0 = CFrame.new(0, 0.5, 0) -- Ketinggian pas naik 0.5
                         weld.Parent = fakeLeg
-                    end
-                    
-                    -- Update posisi Weld C0 & Ketinggian Mesh Offset secara real-time berdasarkan Slider
-                    local currentWeld = fakeLeg:FindFirstChild("KorbloxWeld")
-                    if currentWeld then
-                        currentWeld.C0 = CFrame.new(0, States.KorbloxOffsetY, 0)
                     end
                     
                     fakeLeg.Transparency = 0
                     
-                    -- Cari atau buat SpecialMesh di dalam Part Tiruan
                     local mesh = fakeLeg:FindFirstChild("Mesh")
                     if not mesh then
                         mesh = Instance.new("SpecialMesh")
                         mesh.Parent = fakeLeg
                     end
                     
-                    -- Pasang ID Mesh dan Tekstur Korblox Original
                     mesh.MeshType = Enum.MeshType.FileMesh
                     mesh.MeshId = "rbxassetid://902942093"
                     mesh.TextureId = "rbxassetid://902843398"
-                    
-                    -- Skala disesuaikan agar tulang mencuat indah keluar dari sisa pinggul R6
                     mesh.Scale = Vector3.new(1.1, 1.1, 1.1)
-                    mesh.Offset = Vector3.new(0, States.KorbloxOffsetY * 0.5, 0) -- Ikut menyesuaikan slider secara halus
-                
-                -- ==================== HANDLING FALLBACK: AVATAR R15 ====================
-                elseif char:FindFirstChild("RightLowerLeg") then
-                    -- Hapus fake part R6 jika tidak sengaja terbawa ke map R15
-                    if char:FindFirstChild("kacang55_FakeKorblox") then
-                        char["kacang55_FakeKorblox"]:Destroy()
-                    end
-                    
-                    char.RightLowerLeg.MeshId = "902942093"
-                    char.RightLowerLeg.Transparency = 1
-                    char.RightUpperLeg.MeshId = "http://www.roblox.com/asset/?id=902942096"
-                    char.RightUpperLeg.TextureID = "http://roblox.com/asset/?id=902843398"
-                    char.RightFoot.MeshId = "902942089"
-                    char.RightFoot.Transparency = 1
+                    mesh.Offset = Vector3.new(0, 0.25, 0) -- Mengimbangi mesh agar tetap presisi di atas tanah
                 end
             end)
         else
-            -- Jika Toggle DIMATIKAN, bersihkan semua modifikasi secara rapi
+            -- Bersihkan modifikasi R6 jika toggle mati
             pcall(function()
                 local char = player.Character
-                if char then
-                    if char:FindFirstChild("Right Leg") then
-                        char["Right Leg"].Transparency = 0
-                    end
+                if char and char:FindFirstChild("Right Leg") then
+                    char["Right Leg"].Transparency = 0
                     if char:FindFirstChild("kacang55_FakeKorblox") then
                         char["kacang55_FakeKorblox"]:Destroy()
                     end
@@ -120,6 +94,26 @@ task.spawn(function()
             end)
         end
         task.wait(0.4)
+    end
+end)
+
+-- [ LOGIC LOOP UNTUK KORBLOX R15 MESH REPLACEMENT ]
+task.spawn(function()
+    while true do
+        local char = player.Character
+        if char and States.KorbloxR15 then
+            pcall(function()
+                if char:FindFirstChild("RightLowerLeg") then
+                    char.RightLowerLeg.MeshId = "rbxassetid://902942093"
+                    char.RightLowerLeg.Transparency = 1
+                    char.RightUpperLeg.MeshId = "http://www.roblox.com/asset/?id=902942096"
+                    char.RightUpperLeg.TextureID = "http://roblox.com/asset/?id=902843398"
+                    char.RightFoot.MeshId = "rbxassetid://902942089"
+                    char.RightFoot.Transparency = 1
+                end
+            end)
+        end
+        task.wait(0.5)
     end
 end)
 
@@ -349,12 +343,13 @@ VisualTab:CreateToggle({
     end 
 })
 
--- TOGGLE KORBLOX DENGAN SLIDER PENGATUR KETINGGIAN (HANYA BERPENGARUH PADA R6)
+VisualTab:CreateSection("Korblox Modifiers")
+-- TOGGLE KORBLOX KHUSUS R6
 VisualTab:CreateToggle({
     Name = "Client Korblox Leg (R6)",
     CurrentValue = false,
     Callback = function(v)
-        States.Korblox = v
+        States.KorbloxR6 = v
         if not v then
             pcall(function()
                 local char = player.Character
@@ -367,21 +362,24 @@ VisualTab:CreateToggle({
                     end
                 end
             end)
-            Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox dinonaktifkan secara bersih!", Duration = 3})
+            Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox R6 dinonaktifkan!", Duration = 2})
         end
     end
 })
 
-VisualTab:CreateSlider({
-    Name = "Tinggi Tulang Korblox (R6)",
-    Range = {-2, 2},
-    Increment = 0.05,
-    CurrentValue = 0,
+-- TOGGLE KORBLOX KHUSUS R15
+VisualTab:CreateToggle({
+    Name = "Client Korblox Leg (R15)",
+    CurrentValue = false,
     Callback = function(v)
-        States.KorbloxOffsetY = v
+        States.KorbloxR15 = v
+        if not v then
+            Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox R15 dinonaktifkan. Sempurna setelah Respawn!", Duration = 3})
+        end
     end
 })
 
+VisualTab:CreateSection("Body Transparencies")
 VisualTab:CreateSlider({ Name = "Kepala & Rambut", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Head = v; applyBodyMod(game.Players.LocalPlayer.Character) end })
 VisualTab:CreateSlider({ Name = "Badan", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Torso = v; applyBodyMod(game.Players.LocalPlayer.Character) end })
 VisualTab:CreateSlider({ Name = "Tangan", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) States.Arms = v; applyBodyMod(game.Players.LocalPlayer.Character) end })
