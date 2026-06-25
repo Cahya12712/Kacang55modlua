@@ -17,8 +17,9 @@ local States = {
     Fly = false, FlySpeed = 50,
     SpamSlide = false,
     IsFreezing = false,
-    -- State Tambahan Korblox R6
-    Korblox = false
+    -- State Tambahan Korblox R6 & Pengaturan Tinggi
+    Korblox = false,
+    KorbloxOffsetY = 0 -- Default 0, bisa diatur lewat slider
 }
 
 -- Mengambil Event untuk Spam Slide
@@ -36,7 +37,7 @@ task.spawn(function()
     end)
 end)
 
--- [ LOGIC LOOP UNTUK KORBLOX R6 TULANG MENCUAT - FIXED ]
+-- [ LOGIC LOOP UNTUK KORBLOX R6 TULANG MENCUAT - DENGAN PENGATURAN TINGGI ]
 task.spawn(function()
     while true do
         local char = player.Character
@@ -62,11 +63,15 @@ task.spawn(function()
                         weld.Name = "KorbloxWeld"
                         weld.Part0 = rightLeg
                         weld.Part1 = fakeLeg
-                        weld.C0 = CFrame.new(0, 0, 0)
                         weld.Parent = fakeLeg
                     end
                     
-                    -- Pastikan Transparansi Part Tiruan tetap terlihat
+                    -- Update posisi Weld C0 & Ketinggian Mesh Offset secara real-time berdasarkan Slider
+                    local currentWeld = fakeLeg:FindFirstChild("KorbloxWeld")
+                    if currentWeld then
+                        currentWeld.C0 = CFrame.new(0, States.KorbloxOffsetY, 0)
+                    end
+                    
                     fakeLeg.Transparency = 0
                     
                     -- Cari atau buat SpecialMesh di dalam Part Tiruan
@@ -83,7 +88,7 @@ task.spawn(function()
                     
                     -- Skala disesuaikan agar tulang mencuat indah keluar dari sisa pinggul R6
                     mesh.Scale = Vector3.new(1.1, 1.1, 1.1)
-                    mesh.Offset = Vector3.new(0, -0.05, 0) -- Dituner tipis ke tanah
+                    mesh.Offset = Vector3.new(0, States.KorbloxOffsetY * 0.5, 0) -- Ikut menyesuaikan slider secara halus
                 
                 -- ==================== HANDLING FALLBACK: AVATAR R15 ====================
                 elseif char:FindFirstChild("RightLowerLeg") then
@@ -114,7 +119,7 @@ task.spawn(function()
                 end
             end)
         end
-        task.wait(0.5)
+        task.wait(0.4)
     end
 end)
 
@@ -344,7 +349,7 @@ VisualTab:CreateToggle({
     end 
 })
 
--- TOGGLE KORBLOX R6 (DENGAN REVISI PEMBERSIHAN FAKE PART)
+-- TOGGLE KORBLOX DENGAN SLIDER PENGATUR KETINGGIAN (HANYA BERPENGARUH PADA R6)
 VisualTab:CreateToggle({
     Name = "Client Korblox Leg (R6)",
     CurrentValue = false,
@@ -364,6 +369,16 @@ VisualTab:CreateToggle({
             end)
             Rayfield:Notify({Title = "Korblox Mod", Content = "Korblox dinonaktifkan secara bersih!", Duration = 3})
         end
+    end
+})
+
+VisualTab:CreateSlider({
+    Name = "Tinggi Tulang Korblox (R6)",
+    Range = {-2, 2},
+    Increment = 0.05,
+    CurrentValue = 0,
+    Callback = function(v)
+        States.KorbloxOffsetY = v
     end
 })
 
