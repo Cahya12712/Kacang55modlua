@@ -19,7 +19,10 @@ local States = {
     IsFreezing = false,
     -- State Terpisah untuk R6 dan R15
     KorbloxR6 = false,
-    KorbloxR15 = false
+    KorbloxR15 = false,
+    -- State Tambahan Auto Jump
+    AutoJumpEnabled = false, -- Status apakah modul fitur aktif
+    AutoJumpActive = false   -- Status apakah karakter sedang melompat otomatis
 }
 
 -- Mengambil Event untuk Spam Slide
@@ -37,7 +40,7 @@ task.spawn(function()
     end)
 end)
 
--- [ LOGIC LOOP UNTUK KORBLOX R6 TULANG MENCUAT (FIXED HEIGHT 0.5) ]
+-- [ LOGIC LOOP UNTUK KORBLOX R6 TULANG MENCUAT ]
 task.spawn(function()
     while true do
         local char = player.Character
@@ -45,9 +48,8 @@ task.spawn(function()
             pcall(function()
                 if char:FindFirstChild("Right Leg") then
                     local rightLeg = char["Right Leg"]
-                    rightLeg.Transparency = 1 -- Sembunyikan balok asli R6
+                    rightLeg.Transparency = 1
                     
-                    -- Buat Part Tiruan untuk menampung mesh R6
                     local fakeLeg = char:FindFirstChild("kacang55_FakeKorblox")
                     if not fakeLeg then
                         fakeLeg = Instance.new("Part")
@@ -57,12 +59,11 @@ task.spawn(function()
                         fakeLeg.Massless = true
                         fakeLeg.Parent = char
                         
-                        -- Membuat Weld dan langsung dinaikkan 0.5 sesuai hasil tes
                         local weld = Instance.new("Weld")
                         weld.Name = "KorbloxWeld"
                         weld.Part0 = rightLeg
                         weld.Part1 = fakeLeg
-                        weld.C0 = CFrame.new(0, 0.5, 0) -- Ketinggian pas naik 0.5
+                        weld.C0 = CFrame.new(0, 0.5, 0)
                         weld.Parent = fakeLeg
                     end
                     
@@ -78,11 +79,10 @@ task.spawn(function()
                     mesh.MeshId = "rbxassetid://902942093"
                     mesh.TextureId = "rbxassetid://902843398"
                     mesh.Scale = Vector3.new(1.1, 1.1, 1.1)
-                    mesh.Offset = Vector3.new(0, 0.25, 0) -- Mengimbangi mesh agar tetap presisi di atas tanah
+                    mesh.Offset = Vector3.new(0, 0.25, 0)
                 end
             end)
         else
-            -- Bersihkan modifikasi R6 jika toggle mati
             pcall(function()
                 local char = player.Character
                 if char and char:FindFirstChild("Right Leg") then
@@ -116,6 +116,97 @@ task.spawn(function()
         task.wait(0.5)
     end
 end)
+
+-- [ LOGIC LOOP FOR AUTO JUMP ]
+task.spawn(function()
+    while true do
+        if States.AutoJumpEnabled and States.AutoJumpActive then
+            pcall(function()
+                local char = player.Character
+                if char and char:FindFirstChildOfClass("Humanoid") then
+                    local humanoid = char:FindFirstChildOfClass("Humanoid")
+                    if humanoid.FloorMaterial ~= Enum.Material.Air then
+                        humanoid.Jump = true
+                    end
+                end
+            end)
+        end
+        task.wait(0.05)
+    end
+end)
+
+-- [ FUNGSI MANAJEMEN UI FLOATING BUTTON AUTO JUMP ]
+local AutoJumpGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+AutoJumpGui.Name = "kacang55_AutoJumpUI"
+AutoJumpGui.Enabled = false
+
+local function CreateAutoJumpButton()
+    if AutoJumpGui:FindFirstChild("TriggerBtn") then return end
+    
+    local btn = Instance.new("TextButton", AutoJumpGui)
+    btn.Name = "TriggerBtn"
+    btn.Size = UDim2.new(0, 110, 0, 45)
+    btn.Position = UDim2.new(0.1, 0, 0.45, 0) -- Posisi kiri tengah layar agar tidak menumpuk Fly UI
+    btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    btn.BackgroundTransparency = 0.3
+    btn.TextColor3 = Color3.fromRGB(255, 65, 65)
+    btn.Text = "Auto Jump: OFF"
+    btn.TextSize = 14
+    btn.Font = Enum.Font.SourceSansBold
+    
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0, 8)
+    
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color = Color3.fromRGB(255, 65, 65)
+    stroke.Thickness = 1.5
+
+    -- Membuat tombol kecil bisa di-drag / digeser di layar HP/PC
+    local dragging, dragInput, dragStart, startPos
+    btn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = btn.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    btn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    -- Logika Klik Tombol Pemicu Utama
+    btn.MouseButton1Click:Connect(function()
+        if not States.AutoJumpEnabled then return end
+        States.AutoJumpActive = not States.AutoJumpActive
+        if States.AutoJumpActive then
+            btn.Text = "Auto Jump: ON"
+            btn.TextColor3 = Color3.fromRGB(65, 255, 65)
+            stroke.Color = Color3.fromRGB(65, 255, 65)
+        else
+            btn.Text = "Auto Jump: OFF"
+            btn.TextColor3 = Color3.fromRGB(255, 65, 65)
+            stroke.Color = Color3.fromRGB(255, 65, 65)
+        end
+    end)
+end
+
+local function RemoveAutoJumpButton()
+    States.AutoJumpActive = false
+    local existingBtn = AutoJumpGui:FindFirstChild("TriggerBtn")
+    if existingBtn then existingBtn:Destroy() end
+    AutoJumpGui.Enabled = false
+end
 
 -- [ FUNGSI KEPALA & RAMBUT - FORCE SCAN ]
 local function applyBodyMod(char)
@@ -344,7 +435,6 @@ VisualTab:CreateToggle({
 })
 
 VisualTab:CreateSection("Korblox Modifiers")
--- TOGGLE KORBLOX KHUSUS R6
 VisualTab:CreateToggle({
     Name = "Client Korblox Leg (R6)",
     CurrentValue = false,
@@ -367,7 +457,6 @@ VisualTab:CreateToggle({
     end
 })
 
--- TOGGLE KORBLOX KHUSUS R15
 VisualTab:CreateToggle({
     Name = "Client Korblox Leg (R15)",
     CurrentValue = false,
@@ -400,7 +489,7 @@ EmoteTab:CreateToggle({
    end,
 })
 
--- [ INTEGRASI TAB EXPLOITS BARU ]
+-- [ TAB EXPLOITS - FIXED ]
 ExploitTab:CreateSection("Macro & Automation")
 ExploitTab:CreateToggle({
     Name = "Spam Slide",
@@ -427,6 +516,23 @@ ExploitTab:CreateToggle({
             end)
         else
             Rayfield:Notify({Title = "Spam Slide", Content = "Spam Slide Dimatikan! [OFF]", Duration = 2})
+        end
+    end,
+})
+
+-- MENU AUTO JUMP DI BAWAH SPAM SLIDE
+ExploitTab:CreateToggle({
+    Name = "Auto Jump Mod Module",
+    CurrentValue = false,
+    Callback = function(Value)
+        States.AutoJumpEnabled = Value
+        if Value then
+            AutoJumpGui.Enabled = true
+            CreateAutoJumpButton()
+            Rayfield:Notify({Title = "Auto Jump", Content = "Tombol pemicu ditambahkan ke layar!", Duration = 3})
+        else
+            RemoveAutoJumpButton()
+            Rayfield:Notify({Title = "Auto Jump", Content = "Modul dimatikan & tombol dihapus!", Duration = 2})
         end
     end,
 })
