@@ -1,56 +1,44 @@
--- ==========================================================
--- ROBLOX EXECUTOR DEOBFUSCATION TRACER (SECURE VERSION)
--- ==========================================================
+-- ===================================================
+-- PENETRAL TELEMETRI PANDA (SPOOFING & DUMMY DATA)
+-- Taruh kode ini di baris paling atas skrip utama kamu
+-- ===================================================
 
--- 0. Blokir pemanggilan HTTP / Request agar HWID tidak terkirim
-local old_request = request or http_request or (syn and syn.request)
-getgenv().request = function(options)
-    print("[BLOCKED TELEMETRY REQUEST]:", options and options.Url)
-    return {StatusCode = 200, Body = "{}"}
-end
-if http_request then getgenv().http_request = getgenv().request end
+local HttpService = game:GetService("HttpService")
+local rawRequest = request or http_request or (syn and syn.request)
 
--- 1. Hook print & rconsoleprint
-local old_print = print
-getgenv().print = function(...)
-    local args = {...}
-    local strArgs = {}
-    for i, v in ipairs(args) do
-        table.insert(strArgs, tostring(v))
+if rawRequest then
+    -- Simpan fungsi request asli jika ada fitur hooking
+    local oldRequest = (clonefunction and clonefunction(rawRequest)) or rawRequest
+
+    local function fakeRequest(options)
+        if type(options) == "table" and options.Url and string.find(options.Url, "pandadevelopment%.net/execute_information") then
+            -- Buat payload dummy aman
+            local dummyPayload = HttpService:JSONEncode({
+                slug_id = "0cad1ae40f1b4c9b",
+                executor_name = "AnonymousExecutor",
+                hardware_id = "DUMMY-HWID-0000-0000-0000-000000000000",
+                job_id = "00000000-0000-0000-0000-000000000000",
+                place_id = tostring(game.PlaceId)
+            })
+
+            -- Ganti body request dengan data dummy
+            options.Body = dummyPayload
+        end
+        return oldRequest(options)
     end
-    old_print("[LOGGED]: " .. table.concat(strArgs, " | "))
-    if rconsoleprint then
-        rconsoleprint("[LOGGED]: " .. table.concat(strArgs, " | ") .. "\n")
+
+    -- Terapkan hooking ke fungsi request eksekutor
+    if hookfunction then
+        hookfunction(rawRequest, fakeRequest)
+    else
+        getgenv().request = fakeRequest
+        getgenv().http_request = fakeRequest
     end
 end
 
--- 2. Hooking Pcall
-local old_pcall = pcall
-getgenv().pcall = function(func, ...)
-    local args = {...}
-    print("[PCALL EXECUTED]:", func, (table.unpack or unpack)(args))
-    return old_pcall(func, ...)
-end
-
--- 3. Hooking loadstring
-local old_loadstring = loadstring
-getgenv().loadstring = function(str, chunkname)
-    print("=========================================")
-    print("[CAPTURED PAYLOAD / DECRYPTED SCRIPT]:")
-    print(str)
-    print("=========================================")
-    if setclipboard then
-        setclipboard(str)
-        print("[+] Code otomatis tersalin ke Clipboard!")
-    end
-    return old_loadstring(str, chunkname)
-end
-
-print("--> Hooking & Telemetry Blocker Aktif. Menjalankan Kode...")
-
--- ==========================================================
--- KODE OBFUSCATED ANDA DITEMPEL DI BAWAH SINI
--- ==========================================================
+-- ===================================================
+-- SKRIP UTAMA KAMU DIMULAI DI BAWAH INI
+-- ===================================================
 
 if not getgenv().__panda_elc_0cad1ae40f1b4c9b then
 getgenv().__panda_elc_0cad1ae40f1b4c9b = true
