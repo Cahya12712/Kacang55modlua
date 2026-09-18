@@ -1,40 +1,230 @@
--- ===================================================
--- PENETRAL TELEMETRI PANDA (SPOOFING & DUMMY DATA)
--- Taruh kode ini di baris paling atas skrip utama kamu
--- ===================================================
+-- ==========================================
+-- LUA DEOBF BRUTE-FORCE LOADER LOGGER
+-- ==========================================
 
-local HttpService = game:GetService("HttpService")
-local rawRequest = request or http_request or (syn and syn.request)
+local LOG = "bruteforce_log.txt"
+local counter = 0
 
-if rawRequest then
-    -- Simpan fungsi request asli jika ada fitur hooking
-    local oldRequest = (clonefunction and clonefunction(rawRequest)) or rawRequest
+local function append(s)
+    if not writefile then return end
 
-    local function fakeRequest(options)
-        if type(options) == "table" and options.Url and string.find(options.Url, "pandadevelopment%.net/execute_information") then
-            -- Buat payload dummy aman
-            local dummyPayload = HttpService:JSONEncode({
-                slug_id = "0cad1ae40f1b4c9b",
-                executor_name = "AnonymousExecutor",
-                hardware_id = "DUMMY-HWID-0000-0000-0000-000000000000",
-                job_id = "00000000-0000-0000-0000-000000000000",
-                place_id = tostring(game.PlaceId)
-            })
-
-            -- Ganti body request dengan data dummy
-            options.Body = dummyPayload
-        end
-        return oldRequest(options)
+    local old = ""
+    if isfile and isfile(LOG) and readfile then
+        old = readfile(LOG)
     end
 
-    -- Terapkan hooking ke fungsi request eksekutor
-    if hookfunction then
-        hookfunction(rawRequest, fakeRequest)
-    else
-        getgenv().request = fakeRequest
-        getgenv().http_request = fakeRequest
+    writefile(LOG, old .. tostring(s) .. "\n")
+end
+
+local function save_payload(label, code)
+    if type(code) ~= "string" then
+        return
+    end
+
+    counter = counter + 1
+
+    local filename =
+        "captured_"
+        .. tostring(counter)
+        .. "_"
+        .. tostring(label)
+        .. ".lua"
+
+    writefile(filename, code)
+
+    append("")
+    append("========================================")
+    append("CAPTURE #" .. counter)
+    append("METHOD : " .. tostring(label))
+    append("LENGTH : " .. tostring(#code))
+    append("FILE   : " .. filename)
+    append("========================================")
+    append(code)
+    append("========================================")
+end
+
+writefile(
+    LOG,
+    "===== BRUTE FORCE DEOB START =====\n"
+)
+
+-- ==========================================
+-- ORIGINAL FUNCTIONS
+-- ==========================================
+
+local OLD = {}
+
+OLD.loadstring = loadstring
+OLD.load       = load
+OLD.dofile     = dofile
+OLD.loadfile   = loadfile
+OLD.require    = require
+
+-- ==========================================
+-- GENERIC STRING CAPTURE
+-- ==========================================
+
+local function inspect_code(method, code, chunkname)
+
+    append("")
+    append("[CALL] " .. method)
+    append("chunkname = " .. tostring(chunkname))
+    append("type = " .. type(code))
+
+    if type(code) == "string" then
+        append("length = " .. tostring(#code))
+
+        save_payload(method, code)
+
+        -- Kalau terlihat seperti source Lua,
+        -- tandai secara eksplisit.
+        if code:find("return", 1, true)
+        or code:find("local", 1, true)
+        or code:find("function", 1, true)
+        or code:find("getgenv", 1, true)
+        or code:find("getfenv", 1, true)
+        then
+            append("[!] STRING TERLIHAT SEPERTI LUA SOURCE")
+        end
     end
 end
+
+-- ==========================================
+-- LOADSTRING
+-- ==========================================
+
+if OLD.loadstring then
+
+    loadstring = function(code, chunkname)
+
+        inspect_code(
+            "loadstring",
+            code,
+            chunkname
+        )
+
+        -- Jangan teruskan eksekusi kode hasil capture.
+        return function(...)
+            append(
+                "[CALL] fungsi hasil loadstring dipanggil"
+            )
+
+            append(
+                "args = " .. tostring(select("#", ...))
+            )
+
+            return nil
+        end
+    end
+
+end
+
+-- ==========================================
+-- LOAD
+-- ==========================================
+
+if OLD.load then
+
+    load = function(code, chunkname, mode, env)
+
+        inspect_code(
+            "load",
+            code,
+            chunkname
+        )
+
+        return function(...)
+            append(
+                "[CALL] fungsi hasil load dipanggil"
+            )
+
+            append(
+                "args = " .. tostring(select("#", ...))
+            )
+
+            return nil
+        end
+    end
+
+end
+
+-- ==========================================
+-- DOFILE
+-- ==========================================
+
+if OLD.dofile then
+
+    dofile = function(filename)
+
+        append(
+            "[CALL] dofile"
+        )
+
+        append(
+            "filename = " .. tostring(filename)
+        )
+
+        -- Jangan eksekusi file.
+        return nil
+    end
+
+end
+
+-- ==========================================
+-- LOADFILE
+-- ==========================================
+
+if OLD.loadfile then
+
+    loadfile = function(filename)
+
+        append(
+            "[CALL] loadfile"
+        )
+
+        append(
+            "filename = " .. tostring(filename)
+        )
+
+        return function(...)
+            append(
+                "[CALL] fungsi hasil loadfile dipanggil"
+            )
+        end
+    end
+
+end
+
+-- ==========================================
+-- REQUIRE
+-- ==========================================
+
+if OLD.require then
+
+    require = function(module)
+
+        append(
+            "[CALL] require"
+        )
+
+        append(
+            "module = " .. tostring(module)
+        )
+
+        -- Jangan memuat module.
+        return nil
+    end
+
+end
+
+append("")
+append("===== HOOKS INSTALLED =====")
+append("loadstring")
+append("load")
+append("dofile")
+append("loadfile")
+append("require")
+append("===========================")
 
 -- ===================================================
 -- SKRIP UTAMA KAMU DIMULAI DI BAWAH INI
